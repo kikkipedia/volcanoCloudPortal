@@ -2,11 +2,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const enterButton = document.getElementById('enter-button');
     const backgroundMusic = document.getElementById('background-music');
 
-    backgroundMusic.play();
+    backgroundMusic.pause();
 
     enterButton.addEventListener('click', () => {
         enterButton.style.display = 'none';
-        backgroundMusic.pause();
+        backgroundMusic.play();
     }, { once: true });
 
     const toggleButton = document.getElementById('toggle-visibility-btn');
@@ -133,9 +133,6 @@ const controls = new THREE.OrbitControls(camera, renderer.domElement);
 camera.position.set(0, 70, 0);
 controls.target.set(0, 0, 0);
 controls.update();
-
-
-
 
 
 // Add enhanced lighting for better global illumination

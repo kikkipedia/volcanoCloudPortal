@@ -14,6 +14,8 @@ function fadeTerrain(out) {
                         child.material.opacity = 0;
                         scene.remove(terrain);
                         terrain.visible = false;
+                        camera.position.set(9, -24, 61);
+                        camera.lookAt(volcano.position);
                     }
                 } else {
                     child.material.opacity += fadeSpeed;
@@ -22,6 +24,8 @@ function fadeTerrain(out) {
                         if (!scene.children.includes(terrain)) {
                             scene.add(terrain);
                             terrain.visible = true;
+                            camera.position.set(15, 14, 25);
+                            camera.lookAt(volcano.position);
                         }
                     }
                 }
