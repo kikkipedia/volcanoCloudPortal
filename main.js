@@ -1,3 +1,27 @@
+document.addEventListener('DOMContentLoaded', () => {
+    const enterButton = document.getElementById('enter-button');
+    const backgroundMusic = document.getElementById('background-music');
+
+    backgroundMusic.play();
+
+    enterButton.addEventListener('click', () => {
+        enterButton.style.display = 'none';
+        backgroundMusic.pause();
+    }, { once: true });
+
+    const toggleButton = document.getElementById('toggle-visibility-btn');
+    let terrainVisible = true;
+    toggleButton.addEventListener('click', () => {
+        if (terrain && !isFading) {
+            terrainVisible = !terrainVisible;
+            isFading = true;
+            if (terrainVisible) {
+                terrain.visible = true;
+            }
+        }
+    });
+});
+
 // Initialize Three.js scene
 const scene = new THREE.Scene();
 
@@ -7,13 +31,6 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setClearColor(0xffffff); // White background
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.getElementById('container').appendChild(renderer.domElement);
-
-
-
-
-
-
-
 
 // Add custom skybox with gradient and subtle fog
 const skyGeometry = new THREE.SphereGeometry(500, 32, 32);
@@ -113,7 +130,7 @@ function createFresnelMaterial(fresnelColor = new THREE.Color(0x00ffff), fresnel
 
 // Add controls
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
-camera.position.set(0, 50, 10);
+camera.position.set(0, 70, 0);
 controls.target.set(0, 0, 0);
 controls.update();
 
@@ -305,6 +322,54 @@ loader.load('mayon_slice_FULL3.glb', function (gltf) {
 // Animation loop
 function animate() {
     requestAnimationFrame(animate);
+
+    if (isFading && terrain) {
+        if (!terrainVisible) { // Fading out
+            let stillFading = false;
+            terrain.traverse((child) => {
+                if (child.isMesh && child.material.opacity > 0) {
+                    child.material.opacity -= fadeSpeed;
+                    if(child.material.opacity < 0) child.material.opacity = 0;
+                    stillFading = true;
+                }
+            });
+
+            // A bit of a hack to check if any mesh is still visible
+            let anyMeshVisible = false;
+            terrain.traverse((child) => {
+                if (child.isMesh && child.material.opacity > 0) {
+                    anyMeshVisible = true;
+                }
+            });
+
+            if (!anyMeshVisible) {
+                 isFading = false;
+                 terrain.visible = false;
+            }
+
+        } else { // Fading in
+            let stillFading = false;
+             terrain.traverse((child) => {
+                if (child.isMesh && child.material.opacity < 1) {
+                    child.material.opacity += fadeSpeed;
+                    if(child.material.opacity > 1) child.material.opacity = 1;
+                    stillFading = true;
+                }
+            });
+
+            // A bit of a hack to check if any mesh is still invisible
+            let anyMeshInvisible = false;
+            terrain.traverse((child) => {
+                if (child.isMesh && child.material.opacity < 1) {
+                    anyMeshInvisible = true;
+                }
+            });
+
+            if (!anyMeshInvisible) {
+                 isFading = false;
+            }
+        }
+    }
 
     // Only update controls if the user is interacting with the scene
     if (controls.enabled) {
