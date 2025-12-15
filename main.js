@@ -316,6 +316,11 @@ loader.load('mayon_slice_FULL3.glb', function (gltf) {
     console.error('An error happened loading volcano:', error);
 });
 
+function update() {
+    // Update the camera's orientation based on the position of the slice model
+    camera.lookAt(sliceModel.position);
+}
+
 
 // Handle window resize
 window.addEventListener('resize', function() {

@@ -1,3 +1,13 @@
+const redCubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+const redCubeMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+const redCube = new THREE.Mesh(redCubeGeometry, redCubeMaterial);
+redCube.userData.isRedCube = true;
+
+// Position the red cube in front of the slice model
+redCube.position.set(-4, -3, 5);
+
+scene.add(redCube);
+
 // Animation loop
 function animate(terrainVisible) {
     requestAnimationFrame(animate);
@@ -144,7 +154,7 @@ function onMouseClick(event) {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(volcano.children, true);
+    const intersects = raycaster.intersectObjects(redCube, true);
     if (intersects.length > 0) {
         const infoboxDiv = document.getElementById('infobox');
         if (infoboxDiv.textContent.includes('BACK')) {
@@ -153,7 +163,7 @@ function onMouseClick(event) {
             infoboxDiv.textContent = 'empty';
             console.log('Infobox updated to: empty');
         } else {
-            const intersects = raycaster.intersectObjects(volcano.children, true);
+            const intersects = raycaster.intersectObjects(redCube, true);
             if (intersects.length > 0) {
                 infoboxDiv.textContent = 'volcano BACK';
                 console.log('Infobox updated to: volcano BACK');
@@ -164,21 +174,19 @@ function onMouseClick(event) {
     }
 }
 
-function toggleInfobox() {
-    const infoboxElement = document.getElementById('infobox');
-    const isBackPressed = infoboxElement.textContent.includes('BACK');
+function toggleInfobox(event) {
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-    if (isBackPressed) {
-        // Fade terrain back in
-        
-        infoboxElement.textContent = '';
+    raycaster.setFromCamera(mouse, camera);
+
+    const intersects = raycaster.intersectObjects(scene.children, true);
+    const infoboxElement = document.getElementById('infobox');
+
+    if (intersects.length && intersects[0].object.userData.isRedCube) {
+        infoboxElement.textContent = 'Infobox OPENS';
     } else {
-        const intersects = raycaster.intersectObjects(volcano.children, true);
-        if (intersects.length > 0) {
-            infoboxElement.textContent = 'Volcano BACK';
-            // Fade terrain out
-            
-        }
+        infoboxElement.textContent = 'CLOSED';
     }
 }
 
