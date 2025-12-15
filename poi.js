@@ -177,11 +177,16 @@ function onMouseClick(event) {
 
 function toggleAudio() {
     const backgroundMusic = document.getElementById('background-music');
+    if (!backgroundMusic) {
+        console.error("Audio element with id 'background-music' not found.");
+        return;
+    }
+    // Set properties each time to ensure they are applied
+    backgroundMusic.volume = 0.05;
+    backgroundMusic.playbackRate = 0.75;
+
     if (backgroundMusic.paused) {
-        backgroundMusic.volume = 0.5;
-        backgroundMusic.playbackRate = 0.75;
         backgroundMusic.play();
-        
     } else {
         backgroundMusic.pause();
     }
