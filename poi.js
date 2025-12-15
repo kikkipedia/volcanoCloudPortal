@@ -2,6 +2,7 @@ const redCubeGeometry = new THREE.BoxGeometry(1, 1, 1);
 const redCubeMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
 const redCube = new THREE.Mesh(redCubeGeometry, redCubeMaterial);
 redCube.userData.isRedCube = true;
+redCube.userData.isGlowing = false;
 
 // Position the red cube in front of the slice model
 redCube.position.set(-4, -3, 5);
@@ -154,39 +155,23 @@ function onMouseClick(event) {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(redCube, true);
-    if (intersects.length > 0) {
-        const infoboxDiv = document.getElementById('infobox');
-        if (infoboxDiv.textContent.includes('BACK')) {
-            // Fade terrain back in
-            
-            infoboxDiv.textContent = 'empty';
-            console.log('Infobox updated to: empty');
-        } else {
-            const intersects = raycaster.intersectObjects(redCube, true);
-            if (intersects.length > 0) {
-                infoboxDiv.textContent = 'volcano BACK';
-                console.log('Infobox updated to: volcano BACK');
-                // Fade terrain out
-                
-            }
-        }
-    }
-}
-
-function toggleInfobox(event) {
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-    raycaster.setFromCamera(mouse, camera);
-
     const intersects = raycaster.intersectObjects(scene.children, true);
-    const infoboxElement = document.getElementById('infobox');
 
-    if (intersects.length && intersects[0].object.userData.isRedCube) {
-        infoboxElement.textContent = 'Infobox OPENS';
-    } else {
-        infoboxElement.textContent = 'CLOSED';
+    const redCubeIntersect = intersects.find(intersect => intersect.object.userData.isRedCube);
+
+    if (redCubeIntersect) {
+        const infoboxDiv = document.getElementById('infobox');
+        if (redCube.userData.isGlowing) {
+            redCube.material.color.setHex(0xff0000); // Back to normal red
+            redCube.userData.isGlowing = false;
+            infoboxDiv.textContent = 'Infobox CLOSED';
+            console.log('Infobox updated to: CLOSED');
+        } else {
+            redCube.material.color.setHex(0xffb3b3); // Brighter red
+            redCube.userData.isGlowing = true;
+            infoboxDiv.textContent = 'Infobox OPEN';
+            console.log('Infobox updated to: empty');
+        }
     }
 }
 
