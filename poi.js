@@ -80,69 +80,64 @@ animate();
 // Fade animation function
 function fadeTerrain(out) {
     if (!terrain || isFading) return;
-    
+
     isFading = true;
-    const fadeStep = () => {
-        if (!terrain) return;
-        
-        terrain.traverse((child) => {
-            if (child.isMesh && child.material) {
-                if (out) {
-                    child.material.opacity -= fadeSpeed;
-                    if (child.material.opacity <= 0) {
-                        child.material.opacity = 0;
-                        scene.remove(terrain);
-                        terrain.visible = false;
-                        camera.position.set(9, -24, 61);
-                        camera.lookAt(volcano.position);
-                    }
-                } else {
-                    child.material.opacity += fadeSpeed;
-                    if (child.material.opacity >= 1) {
-                        child.material.opacity = 1;
-                        if (!scene.children.includes(terrain)) {
-                            scene.add(terrain);
-                            terrain.visible = true;
-                            camera.position.set(15, 14, 25);
-                            camera.lookAt(volcano.position);
-                        }
-                    }
-                }
+
+    const startPosition = camera.position.clone();
+    const endPosition = out ? new THREE.Vector3(9, -24, 61) : new THREE.Vector3(15, 14, 25);
+    
+    // Ensure terrain is visible and set initial opacity for fade-in
+    if (!out) {
+        terrain.traverse(child => {
+            if(child.isMesh) {
+                // Ensure material is transparent to allow fading
+                child.material.transparent = true;
+                child.material.opacity = 0;
             }
         });
-        
-        if (out) {
-            // Check if fully faded out
-            let allTransparent = true;
-            terrain.traverse((child) => {
-                if (child.isMesh && child.material && child.material.opacity > 0) {
-                    allTransparent = false;
-                }
-            });
-            
-            if (!allTransparent) {
-                requestAnimationFrame(fadeStep);
-            } else {
-                isFading = false;
+        if (!scene.children.includes(terrain)) {
+            scene.add(terrain);
+        }
+        terrain.visible = true;
+    }
+
+    const duration = 1500; // 1.5 seconds for the animation
+    let startTime = null;
+
+    function animationStep(timestamp) {
+        if (startTime === null) {
+            startTime = timestamp;
+        }
+        const elapsedTime = timestamp - startTime;
+        const linearProgress = Math.min(elapsedTime / duration, 1);
+        // Apply ease-in-out function for smoother animation
+        const easedProgress = 0.5 * (1 - Math.cos(linearProgress * Math.PI));
+
+        // Interpolate camera position and update its view
+        camera.position.lerpVectors(startPosition, endPosition, easedProgress);
+        if(volcano) camera.lookAt(volcano.position);
+
+        // Interpolate terrain opacity
+        const opacity = out ? 1 - easedProgress : easedProgress;
+        terrain.traverse((child) => {
+            if (child.isMesh && child.material) {
+                child.material.opacity = opacity;
             }
+        });
+
+        if (linearProgress < 1) {
+            requestAnimationFrame(animationStep);
         } else {
-            // Check if fully visible
-            let allOpaque = true;
-            terrain.traverse((child) => {
-                if (child.isMesh && child.material && child.material.opacity < 1) {
-                    allOpaque = false;
-                }
-            });
-            
-            if (!allOpaque) {
-                requestAnimationFrame(fadeStep);
-            } else {
-                isFading = false;
+            // Animation complete
+            isFading = false;
+            if (out) {
+                terrain.visible = false;
+                scene.remove(terrain);
             }
         }
-    };
-    
-    fadeStep();
+    }
+
+    requestAnimationFrame(animationStep);
 }
 
 
