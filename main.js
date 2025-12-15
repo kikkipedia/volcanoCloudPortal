@@ -6,7 +6,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     enterButton.addEventListener('click', () => {
         enterButton.style.display = 'none';
-        backgroundMusic.play();
+        if (backgroundMusic.paused) {
+            toggleAudio();
+        }
     }, { once: true });
 
     const toggleButton = document.getElementById('toggle-visibility-btn');
@@ -130,8 +132,8 @@ function createFresnelMaterial(fresnelColor = new THREE.Color(0x00ffff), fresnel
 
 // Add controls
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
-camera.position.set(0, 70, 0);
-controls.target.set(0, 0, 0);
+camera.position.set(15, 14, 25);
+camera.lookAt(0, 0, 0);
 controls.update();
 
 
@@ -208,14 +210,13 @@ scene.add(volcanoSpotLight);
 scene.add(volcanoSpotLight.target);
 
 
-
 // GLTF Loader
 const loader = new THREE.GLTFLoader();
 
 // Variables for fade animation
 let terrain = null;
 let isFading = false;
-let fadeSpeed = 0.02;
+let fadeSpeed = 0.005;
 
 
 // Load terrain model (single instance)
@@ -315,75 +316,6 @@ loader.load('mayon_slice_FULL3.glb', function (gltf) {
     console.error('An error happened loading volcano:', error);
 });
 
-
-// Animation loop
-function animate() {
-    requestAnimationFrame(animate);
-
-    if (isFading && terrain) {
-        if (!terrainVisible) { // Fading out
-            let stillFading = false;
-            terrain.traverse((child) => {
-                if (child.isMesh && child.material.opacity > 0) {
-                    child.material.opacity -= fadeSpeed;
-                    if(child.material.opacity < 0) child.material.opacity = 0;
-                    stillFading = true;
-                }
-            });
-
-            // A bit of a hack to check if any mesh is still visible
-            let anyMeshVisible = false;
-            terrain.traverse((child) => {
-                if (child.isMesh && child.material.opacity > 0) {
-                    anyMeshVisible = true;
-                }
-            });
-
-            if (!anyMeshVisible) {
-                 isFading = false;
-                 terrain.visible = false;
-            }
-
-        } else { // Fading in
-            let stillFading = false;
-             terrain.traverse((child) => {
-                if (child.isMesh && child.material.opacity < 1) {
-                    child.material.opacity += fadeSpeed;
-                    if(child.material.opacity > 1) child.material.opacity = 1;
-                    stillFading = true;
-                }
-            });
-
-            // A bit of a hack to check if any mesh is still invisible
-            let anyMeshInvisible = false;
-            terrain.traverse((child) => {
-                if (child.isMesh && child.material.opacity < 1) {
-                    anyMeshInvisible = true;
-                }
-            });
-
-            if (!anyMeshInvisible) {
-                 isFading = false;
-            }
-        }
-    }
-
-    // Only update controls if the user is interacting with the scene
-    if (controls.enabled) {
-        controls.update();
-    }
-
-    renderer.render(scene, camera);
-
-    // Only update the camera coordinates display if the camera has moved
-    const coordsDiv = document.getElementById('coordinates');
-    const prevCoordsText = coordsDiv.textContent;
-    const coordsText = `Camera: X: ${camera.position.x.toFixed(2)}, Y: ${camera.position.y.toFixed(2)}, Z: ${camera.position.z.toFixed(2)}`;
-    if (coordsText !== prevCoordsText) {
-        coordsDiv.textContent = coordsText;
-    }
-}
-animate();
 
 // Handle window resize
 window.addEventListener('resize', function() {

@@ -1,3 +1,71 @@
+// Animation loop
+function animate(terrainVisible) {
+    requestAnimationFrame(animate);
+
+    if (isFading && terrain) {
+        if (!terrainVisible) { // Fading out
+            let stillFading = false;
+            terrain.traverse((child) => {
+                if (child.isMesh && child.material.opacity > 0) {
+                    child.material.opacity -= fadeSpeed;
+                    if(child.material.opacity < 0) child.material.opacity = 0;
+                    stillFading = true;
+                }
+            });
+
+            // A bit of a hack to check if any mesh is still visible
+            let anyMeshVisible = false;
+            terrain.traverse((child) => {
+                if (child.isMesh && child.material.opacity > 0) {
+                    anyMeshVisible = true;
+                }
+            });
+
+            if (!anyMeshVisible) {
+                 isFading = false;
+                 terrain.visible = false;
+            }
+
+        } else { // Fading in
+            let stillFading = false;
+             terrain.traverse((child) => {
+                if (child.isMesh && child.material.opacity < 1) {
+                    child.material.opacity += fadeSpeed;
+                    if(child.material.opacity > 1) child.material.opacity = 1;
+                    stillFading = true;
+                }
+            });
+
+            // A bit of a hack to check if any mesh is still invisible
+            let anyMeshInvisible = false;
+            terrain.traverse((child) => {
+                if (child.isMesh && child.material.opacity < 1) {
+                    anyMeshInvisible = true;
+                }
+            });
+
+            if (!anyMeshInvisible) {
+                 isFading = false;
+            }
+        }
+    }
+
+    // Only update controls if the user is interacting with the scene
+    if (controls.enabled) {
+        controls.update();
+    }
+
+    renderer.render(scene, camera);
+
+    // Only update the camera coordinates display if the camera has moved
+    const coordsDiv = document.getElementById('coordinates');
+    const prevCoordsText = coordsDiv.textContent;
+    const coordsText = `Camera: X: ${camera.position.x.toFixed(2)}, Y: ${camera.position.y.toFixed(2)}, Z: ${camera.position.z.toFixed(2)}`;
+    if (coordsText !== prevCoordsText) {
+        coordsDiv.textContent = coordsText;
+    }
+}
+animate();
 // Fade animation function
 function fadeTerrain(out) {
     if (!terrain || isFading) return;
@@ -111,6 +179,18 @@ function toggleInfobox() {
             // Fade terrain out
             
         }
+    }
+}
+
+function toggleAudio() {
+    const backgroundMusic = document.getElementById('background-music');
+    if (backgroundMusic.paused) {
+        backgroundMusic.volume = 0.5;
+        backgroundMusic.playbackRate = 0.75;
+        backgroundMusic.play();
+        
+    } else {
+        backgroundMusic.pause();
     }
 }
 
