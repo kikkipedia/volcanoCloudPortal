@@ -10,25 +10,14 @@ document.addEventListener('DOMContentLoaded', () => {
             toggleAudio();
         }
     }, { once: true });
-
-    const toggleButton = document.getElementById('toggle-visibility-btn');
-    let terrainVisible = true;
-    toggleButton.addEventListener('click', () => {
-        if (terrain && !isFading) {
-            terrainVisible = !terrainVisible;
-            isFading = true;
-            if (terrainVisible) {
-                terrain.visible = true;
-            }
-        }
-    });
 });
 
-// Initialize Three.js scene
-const scene = new THREE.Scene();
 
-scene.fog = new THREE.Fog(0x000000, 100, 400); // Enhanced fog for smooth fadeout
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+// Initialize Three.js scene
+window.scene = new THREE.Scene();
+
+window.scene.fog = new THREE.Fog(0x000000, 100, 400); // Enhanced fog for smooth fadeout
+window.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer();
 renderer.setClearColor(0xffffff); // White background
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -66,7 +55,9 @@ const skyMaterial = new THREE.ShaderMaterial({
 });
 
 const sky = new THREE.Mesh(skyGeometry, skyMaterial);
-scene.add(sky);
+window.scene.add(sky);
+
+createSmoke();
 
 // Custom Fresnel shader material for edge glow effect
 function createFresnelMaterial(fresnelColor = new THREE.Color(0x00ffff), fresnelPower = 2.0, fresnelIntensity = 1.0) {
@@ -131,72 +122,72 @@ function createFresnelMaterial(fresnelColor = new THREE.Color(0x00ffff), fresnel
 }
 
 // Add controls
-const controls = new THREE.OrbitControls(camera, renderer.domElement);
-camera.position.set(15, 14, 25);
-camera.lookAt(0, 0, 0);
+const controls = new THREE.OrbitControls(window.camera, renderer.domElement);
+window.camera.position.set(15, 14, 25);
+window.camera.lookAt(0, 0, 0);
 controls.update();
 
 
 // Add enhanced lighting for better global illumination
 // Ambient light for base illumination (increased for more consistent lighting)
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
-scene.add(ambientLight);
+window.scene.add(ambientLight);
 
 // Hemisphere light for natural sky/ground lighting (increased intensity)
 const hemisphereLight = new THREE.HemisphereLight(0x87CEEB, 0x8B4513, 1.2);
-scene.add(hemisphereLight);
+window.scene.add(hemisphereLight);
 
 // Main directional light (sun) - aimed between both models (increased intensity)
 const directionalLight = new THREE.DirectionalLight(0xffffff, 1.4);
 directionalLight.position.set(5, 25, 5);
 directionalLight.lookAt(-7.5, 0, 7.5); // Looking at midpoint between terrain and volcano
-scene.add(directionalLight);
+window.scene.add(directionalLight);
 
 // Additional fill light from opposite direction
 const fillLight = new THREE.DirectionalLight(0xfff8dc, 1.0);
 fillLight.position.set(-15, 20, -15);
 fillLight.lookAt(-7.5, 0, 7.5); // Also aimed at midpoint
-scene.add(fillLight);
+window.scene.add(fillLight);
 
 // Secondary directional light for enhanced global illumination
 const directionalLight2 = new THREE.DirectionalLight(0xfff4e6, 1.2);
 directionalLight2.position.set(-10, 30, 10);
 directionalLight2.lookAt(0, 0, 0); // Focused on volcano model area
-scene.add(directionalLight2);
+window.scene.add(directionalLight2);
 
 // Point lights for more even global illumination (positioned to cover both models)
 const pointLight1 = new THREE.PointLight(0xffffff, 1.2, 150);
 pointLight1.position.set(10, 20, 10); // Near volcano slice
-scene.add(pointLight1);
+window.scene.add(pointLight1);
 
 const pointLight2 = new THREE.PointLight(0xffffff, 1.2, 150);
 pointLight2.position.set(-20, 20, 20); // Near terrain model
-scene.add(pointLight2);
+window.scene.add(pointLight2);
 
 const pointLight3 = new THREE.PointLight(0xffffff, 1.0, 150);
 pointLight3.position.set(-5, 25, 15); // Additional light for terrain area
-scene.add(pointLight3);
+window.scene.add(pointLight3);
 
 const pointLight4 = new THREE.PointLight(0xffffff, 1.0, 150);
 pointLight4.position.set(5, 25, -5); // Additional light for volcano area
-scene.add(pointLight4);
+window.scene.add(pointLight4);
 
 // Enhanced point lights specifically for volcano model global illumination
 const volcanoPointLight1 = new THREE.PointLight(0xfff4e6, 1.5, 100);
 volcanoPointLight1.position.set(8, 15, 8); // Warm light near volcano
-scene.add(volcanoPointLight1);
+window.scene.add(volcanoPointLight1);
 
 const volcanoPointLight2 = new THREE.PointLight(0xffd700, 1.3, 100);
 volcanoPointLight2.position.set(-8, 12, 8); // Golden warm light
-scene.add(volcanoPointLight2);
+window.scene.add(volcanoPointLight2);
 
 const volcanoPointLight3 = new THREE.PointLight(0xfff4e6, 1.4, 100);
 volcanoPointLight3.position.set(0, 18, -8); // Front warm light
-scene.add(volcanoPointLight3);
+window.scene.add(volcanoPointLight3);
 
 const volcanoPointLight4 = new THREE.PointLight(0xffffff, 1.1, 100);
 volcanoPointLight4.position.set(0, 25, 0); // Top light for better illumination
-scene.add(volcanoPointLight4);
+window.scene.add(volcanoPointLight4);
 
 // Spotlight for dramatic accent lighting on volcano
 const volcanoSpotLight = new THREE.SpotLight(0xfff4e6, 2.0, 200);
@@ -206,17 +197,17 @@ volcanoSpotLight.penumbra = 0.3;
 volcanoSpotLight.decay = 2;
 volcanoSpotLight.distance = 200;
 volcanoSpotLight.target.position.set(0, 0, 0); // Focused on volcano
-scene.add(volcanoSpotLight);
-scene.add(volcanoSpotLight.target);
+window.scene.add(volcanoSpotLight);
+window.scene.add(volcanoSpotLight.target);
 
 
 // GLTF Loader
 const loader = new THREE.GLTFLoader();
 
 // Variables for fade animation
-let terrain = null;
-let isFading = false;
-let fadeSpeed = 0.005;
+window.terrain = null;
+window.isFading = false;
+window.volcano = null;
 
 
 // Load terrain model (single instance)
@@ -263,25 +254,24 @@ loader.load('mayon_FULL3.glb', ({ scene: terrainModel }) => {
         }
     });
     
-    scene.add(terrainModel);
+    window.scene.add(terrainModel);
     console.log(terrainModel);
     terrainModel.name = 'Terrain';
-    terrain = terrainModel;
+    window.terrain = terrainModel;
 }, undefined, function (error) {
     console.error('An error happened loading terrain:', error);
 });
 
 
 // Load volcano slice model
-let volcano;
 loader.load('mayon_slice_FULL3.glb', function (gltf) {
-    volcano = gltf.scene;
-    volcano.position.set(0, 0, 0);
-    volcano.scale.set(0.25, 0.25, 0.25); // Reverted scale back to original 0.25
-    volcano.rotation.set(0,-135, 0);
+    window.volcano = gltf.scene;
+    window.volcano.position.set(0, 0, 0);
+    window.volcano.scale.set(0.25, 0.25, 0.25); // Reverted scale back to original 0.25
+    window.volcano.rotation.set(0,-135, 0);
     
     // Mark meshes as processed and apply Fresnel effect
-    volcano.traverse((child) => {
+    window.volcano.traverse((child) => {
         if (child.isMesh) {
             // Mark this mesh as processed to avoid infinite recursion
             child.userData.fresnelProcessed = true;
@@ -289,7 +279,7 @@ loader.load('mayon_slice_FULL3.glb', function (gltf) {
     });
     
     // Apply Fresnel effect separately after traversal
-    volcano.traverse((child) => {
+    window.volcano.traverse((child) => {
         if (child.isMesh && child.userData.fresnelProcessed && !child.userData.fresnelAdded) {
             // Create Fresnel outline effect
             const fresnelMaterial = createFresnelMaterial(
@@ -310,21 +300,44 @@ loader.load('mayon_slice_FULL3.glb', function (gltf) {
         }
     });
     
-    scene.add(volcano);
-    console.log(volcano);
+    window.scene.add(window.volcano);
+    console.log(window.volcano);
 }, undefined, function (error) {
     console.error('An error happened loading volcano:', error);
 });
 
-function update() {
-    // Update the camera's orientation based on the position of the slice model
-    camera.lookAt(sliceModel.position);
-}
-
-
 // Handle window resize
 window.addEventListener('resize', function() {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
+    window.camera.aspect = window.innerWidth / window.innerHeight;
+    window.camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
+// Animation loop
+function animate() {
+    requestAnimationFrame(animate);
+
+    // Update smoke
+    if (typeof updateSmoke === 'function') {
+        updateSmoke();
+    }
+
+    // Update controls
+    controls.update();
+
+    // Render the scene
+    renderer.render(window.scene, window.camera);
+
+    // Only update the camera coordinates display if the camera has moved
+    const coordsDiv = document.getElementById('coordinates');
+    if (coordsDiv) {
+        const prevCoordsText = coordsDiv.textContent;
+        const coordsText = `Camera: X: ${window.camera.position.x.toFixed(2)}, Y: ${window.camera.position.y.toFixed(2)}, Z: ${window.camera.position.z.toFixed(2)}`;
+        if (coordsText !== prevCoordsText) {
+            coordsDiv.textContent = coordsText;
+        }
+    }
+}
+
+// Start animation loop
+animate();

@@ -7,98 +7,33 @@ redCube.userData.isGlowing = false;
 // Position the red cube in front of the slice model
 redCube.position.set(-4, -3, 5);
 
-scene.add(redCube);
+window.scene.add(redCube);
 
-// Animation loop
-function animate(terrainVisible) {
-    requestAnimationFrame(animate);
-
-    if (isFading && terrain) {
-        if (!terrainVisible) { // Fading out
-            let stillFading = false;
-            terrain.traverse((child) => {
-                if (child.isMesh && child.material.opacity > 0) {
-                    child.material.opacity -= fadeSpeed;
-                    if(child.material.opacity < 0) child.material.opacity = 0;
-                    stillFading = true;
-                }
-            });
-
-            // A bit of a hack to check if any mesh is still visible
-            let anyMeshVisible = false;
-            terrain.traverse((child) => {
-                if (child.isMesh && child.material.opacity > 0) {
-                    anyMeshVisible = true;
-                }
-            });
-
-            if (!anyMeshVisible) {
-                 isFading = false;
-                 terrain.visible = false;
-            }
-
-        } else { // Fading in
-            let stillFading = false;
-             terrain.traverse((child) => {
-                if (child.isMesh && child.material.opacity < 1) {
-                    child.material.opacity += fadeSpeed;
-                    if(child.material.opacity > 1) child.material.opacity = 1;
-                    stillFading = true;
-                }
-            });
-
-            // A bit of a hack to check if any mesh is still invisible
-            let anyMeshInvisible = false;
-            terrain.traverse((child) => {
-                if (child.isMesh && child.material.opacity < 1) {
-                    anyMeshInvisible = true;
-                }
-            });
-
-            if (!anyMeshInvisible) {
-                 isFading = false;
-            }
-        }
-    }
-
-    // Only update controls if the user is interacting with the scene
-    if (controls.enabled) {
-        controls.update();
-    }
-
-    renderer.render(scene, camera);
-
-    // Only update the camera coordinates display if the camera has moved
-    const coordsDiv = document.getElementById('coordinates');
-    const prevCoordsText = coordsDiv.textContent;
-    const coordsText = `Camera: X: ${camera.position.x.toFixed(2)}, Y: ${camera.position.y.toFixed(2)}, Z: ${camera.position.z.toFixed(2)}`;
-    if (coordsText !== prevCoordsText) {
-        coordsDiv.textContent = coordsText;
-    }
-}
-animate();
 // Fade animation function
 function fadeTerrain(out) {
-    if (!terrain || isFading) return;
+    console.log('fadeTerrain called with out:', out, 'isFading:', window.isFading);
+    if (!window.terrain || window.isFading) return;
 
-    isFading = true;
+    window.isFading = true;
+    console.log('isFading set to true');
 
-    const startPosition = camera.position.clone();
+    const startPosition = window.camera.position.clone();
     const endPosition = out ? new THREE.Vector3(9, -24, 61) : new THREE.Vector3(15, 14, 25);
     
     // Ensure terrain is visible and set initial opacity for fade-in
     if (!out) {
-        terrain.traverse(child => {
+        console.log('Fading in: adding terrain back to scene if needed.');
+        window.terrain.traverse(child => {
             if(child.isMesh) {
                 // Ensure material is transparent to allow fading
                 child.material.transparent = true;
                 child.material.opacity = 0;
             }
         });
-        if (!scene.children.includes(terrain)) {
-            scene.add(terrain);
+        if (!window.scene.children.includes(window.terrain)) {
+            window.scene.add(window.terrain);
         }
-        terrain.visible = true;
+        window.terrain.visible = true;
     }
 
     const duration = 1500; // 1.5 seconds for the animation
@@ -112,14 +47,16 @@ function fadeTerrain(out) {
         const linearProgress = Math.min(elapsedTime / duration, 1);
         // Apply ease-in-out function for smoother animation
         const easedProgress = 0.5 * (1 - Math.cos(linearProgress * Math.PI));
+        
+        console.log('Animation step - progress:', easedProgress);
 
         // Interpolate camera position and update its view
-        camera.position.lerpVectors(startPosition, endPosition, easedProgress);
-        if(volcano) camera.lookAt(volcano.position);
+        window.camera.position.lerpVectors(startPosition, endPosition, easedProgress);
+        if(window.volcano) window.camera.lookAt(window.volcano.position);
 
         // Interpolate terrain opacity
         const opacity = out ? 1 - easedProgress : easedProgress;
-        terrain.traverse((child) => {
+        window.terrain.traverse((child) => {
             if (child.isMesh && child.material) {
                 child.material.opacity = opacity;
             }
@@ -129,14 +66,17 @@ function fadeTerrain(out) {
             requestAnimationFrame(animationStep);
         } else {
             // Animation complete
-            isFading = false;
+            console.log('Animation complete.');
+            window.isFading = false;
             if (out) {
-                terrain.visible = false;
-                scene.remove(terrain);
+                console.log('Fading out: setting terrain invisible and removing from scene.');
+                window.terrain.visible = false;
+                window.scene.remove(window.terrain);
             }
         }
     }
 
+    console.log('Starting animation frame request.');
     requestAnimationFrame(animationStep);
 }
 
@@ -149,8 +89,8 @@ const mouse = new THREE.Vector2();
 function onMouseClick(event) {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(scene.children, true);
+    raycaster.setFromCamera(mouse, window.camera);
+    const intersects = raycaster.intersectObjects(window.scene.children, true);
 
     const redCubeIntersect = intersects.find(intersect => intersect.object.userData.isRedCube);
 
@@ -189,7 +129,8 @@ function toggleAudio() {
 
 window.addEventListener('click', onMouseClick);
 document.getElementById('toggle-visibility-btn').addEventListener('click', () => {
-    if (terrain) {
-        fadeTerrain(terrain.visible);
+    console.log('Toggle terrain button clicked. Terrain visible:', window.terrain ? window.terrain.visible : 'not loaded');
+    if (window.terrain) {
+        fadeTerrain(window.terrain.visible);
     }
 });
