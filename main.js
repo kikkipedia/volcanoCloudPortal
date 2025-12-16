@@ -316,15 +316,10 @@ window.addEventListener('resize', function() {
 // Animation loop
 function animate() {
     requestAnimationFrame(animate);
-
     // Update smoke
-    if (typeof updateSmoke === 'function') {
-        updateSmoke();
-    }
-
+    updateSmoke();
     // Update controls
     controls.update();
-
     // Render the scene
     renderer.render(window.scene, window.camera);
 
