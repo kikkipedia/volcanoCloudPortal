@@ -2,13 +2,14 @@ const smokeParticles = [];
 
 function createSmoke() {
     console.log('createSmoke called');
+
     const textureLoader = new THREE.TextureLoader();
-    const smokeTexture = textureLoader.load('volcano_smoke1.png');
+    const smokeTexture = textureLoader.load('volcano_smoke1_whiteBG.png');
 
     const smokeMaterial = new THREE.ShaderMaterial({
         uniforms: {
-            smokeTexture: { type: 't', value: smokeTexture },
-            opacity: { type: 'f', value: 1.0 }
+            smokeTexture: { value: smokeTexture },
+            opacity: { value: 1.0 }
         },
         vertexShader: `
             varying vec2 vUv;
@@ -21,11 +22,21 @@ function createSmoke() {
             uniform sampler2D smokeTexture;
             uniform float opacity;
             varying vec2 vUv;
+
             void main() {
-                gl_FragColor = texture2D(smokeTexture, vUv);
-                gl_FragColor.a *= opacity;
+                vec4 tex = texture2D(smokeTexture, vUv);
+
+                // Derive alpha from brightness (white background = transparent)
+                float lum = (tex.r + tex.g + tex.b) / 3.0;
+                float alpha = (1.0 - lum) * opacity;
+
+                // Smoke color (white smoke)
+                vec3 color = vec3(1.0) * alpha;
+
+                gl_FragColor = vec4(color, alpha);
             }
         `,
+        transparent: true,
         depthWrite: false
     });
 
@@ -45,13 +56,14 @@ function createSmoke() {
         smokeParticles.push(particle);
         window.scene.add(particle);
     }
+
     console.log('Smoke particles:', smokeParticles.length);
 }
 
 function updateSmoke() {
     smokeParticles.forEach(particle => {
         particle.position.add(particle.userData.velocity);
-        // particle.lookAt(camera.position);
+        particle.lookAt(camera.position);
         particle.material.uniforms.opacity.value -= 0.001;
 
         if (particle.material.uniforms.opacity.value <= 0) {
