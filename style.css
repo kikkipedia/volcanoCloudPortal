@@ -32,11 +32,16 @@ body {
     font-size: 16px;
 }
 
-#toggle-visibility-btn {
+#button-container {
     position: absolute;
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+}
+
+#toggle-visibility-btn {
     padding: 10px 20px;
     background-color: rgba(0, 0, 0, 0.5);
     color: white;
@@ -55,4 +60,38 @@ body {
     font-size: 24px;
     cursor: pointer;
     z-index: 100;
+}
+
+#parameters-btn {
+    position: absolute;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+    padding: 10px 20px;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    z-index: 100;
+}
+
+#parameters-popup {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 101;
+    display: none;
+}
+
+#parameters-popup input[type="range"] {
+    width: 100%;
+    margin-bottom: 10px;
 }

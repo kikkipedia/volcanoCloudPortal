@@ -12,7 +12,18 @@
     <div id="container"></div>
     <div id="coordinates"></div>
     <div id="infobox" onclick="toggleInfobox()">Infobox</div>
-    <button id="toggle-visibility-btn">Toggle Terrain</button>
+    <div id="button-container">
+        <button id="toggle-visibility-btn">Toggle Terrain</button>
+    </div>
+    <button id="parameters-btn">Parameters</button>
+    <div id="parameters-popup" style="display: none;">
+        <div>
+            <label for="temperature-slider">Temperatures</label>
+            <input type="range" id="temperature-slider" min="0.5" max="2.5" value="1.5" step="0.1">
+        </div>
+        <input type="range" min="0" max="100" value="50">
+        <input type="range" min="0" max="100" value="50">
+    </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -20,5 +31,6 @@
     <script src="smoke.js?t=1734336000000"></script>
     <script src="main.js?t=1734336000000"></script>
     <script src="poi.js?t=1734336000000"></script>
+    <script src="parameters.js?t=1734336000000"></script>
 </body>
 </html>
