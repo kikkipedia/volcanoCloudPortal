@@ -58,15 +58,20 @@ function stretchVolcano() {
         return;
     }
 
+    const stretchSliderValue = window.volcanoStretch || 1.0;
+    
+    // Set smoke depth factor based on volcano stretch.
+    // Deeper volcano (higher stretch value) means smaller factor, hence less vertical force for smoke.
+    window.smokeDepthFactor = 1.0 / stretchSliderValue;
+
     window.volcano.traverse((child) => {
         if (child.isMesh) {
             const geometry = child.geometry;
             if (geometry.isBufferGeometry && geometry.userData.originalVertices) {
                 const positions = geometry.attributes.position.array;
                 const originalPositions = geometry.userData.originalVertices;
-                const stretchSliderValue = window.volcanoStretch || 1.0;
-                const stretchAmount = stretchSliderValue - 1.0; // Range -1.0 to 1.0
-                const maxDisplacement = 30.0; 
+                const stretchAmount = stretchSliderValue - 1.0;
+                const maxDisplacement = 30; 
 
                 const stretchMin = 90;
                 const stretchMax = 35;
@@ -83,9 +88,11 @@ function stretchVolcano() {
 
                     let t = 0;
                     if (originalZ >= stretchMax) {
-                        // Vertices above the stretch range are displaced fully.
-                        t = 1.0;
-                    } else if (originalZ > stretchMin) {
+                        // Vertices above the stretch max are fully displaced.
+                        t = 1;
+                    } else if (originalZ >= stretchMin) {
+
+                    // if (originalZ > stretchMin && originalZ <= stretchMax) {
                         // Vertices inside the stretch range are displaced proportionally.
                         t = (originalZ - stretchMin) / (stretchMax - stretchMin);
                     }

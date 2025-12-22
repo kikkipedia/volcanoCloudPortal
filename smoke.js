@@ -68,6 +68,7 @@ function updateSmoke() {
     const speed = window.smokeSpeed || 1.0;
     const height = window.smokeHeight || 1.0;
     const lifetime = window.smokeLifetime || 2.5;
+    const depthFactor = window.smokeDepthFactor || 1.0;
 
     smokeParticles.forEach(particle => {
         const age = (now - particle.userData.birthTime) / 1000; // age in seconds
@@ -75,6 +76,10 @@ function updateSmoke() {
         // Calculate scaled velocity
         const scaledVelocity = particle.userData.velocity.clone();
         scaledVelocity.y *= height;
+        
+        // Apply depth factor to vertical force, linking it to volcano stretch
+        scaledVelocity.y *= depthFactor;
+
         scaledVelocity.multiplyScalar(speed);
 
         // Move particle
