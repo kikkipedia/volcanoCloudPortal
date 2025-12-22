@@ -3,6 +3,7 @@ window.smokeHeight = 1.0; // Default smoke height
 window.smokeLifetime = 2.5; // Default smoke lifetime
 window.gasDensity = 50; // Default gas density
 window.volcanoStretch = 1.0; // Default volcano stretch
+window.temperature = 20; // Default temperature
 
 const parametersButton = document.getElementById('parameters-btn');
 const popup = document.getElementById('parameters-popup');
@@ -50,6 +51,13 @@ if (volcanoStretchSlider) {
     volcanoStretchSlider.addEventListener('input', (event) => {
         window.volcanoStretch = parseFloat(event.target.value);
         stretchVolcano();
+    });
+}
+
+const temperatureSlider = document.getElementById('temperature-slider');
+if (temperatureSlider) {
+    temperatureSlider.addEventListener('input', (event) => {
+        window.temperature = parseFloat(event.target.value);
     });
 }
 
