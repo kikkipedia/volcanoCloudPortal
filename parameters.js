@@ -65,26 +65,35 @@ function stretchVolcano() {
                 const positions = geometry.attributes.position.array;
                 const originalPositions = geometry.userData.originalVertices;
                 const stretchSliderValue = window.volcanoStretch || 1.0;
-                const stretchAmount = stretchSliderValue - 1.0; // Range 0.0 to 2.0
+                const stretchAmount = stretchSliderValue - 1.0; // Range -1.0 to 1.0
                 const maxDisplacement = 10.0; 
 
                 const stretchMin = -18;
                 const stretchMax = -4;
 
                 for (let i = 0; i < originalPositions.length; i += 3) {
+                    const originalX = originalPositions[i];
                     const originalY = originalPositions[i + 1];
-                    
-                    positions[i] = originalPositions[i];
-                    positions[i + 1] = originalPositions[i+1];
-                    positions[i + 2] = originalPositions[i + 2];
+                    const originalZ = originalPositions[i + 2];
 
-                    if (originalY >= stretchMin && originalY <= stretchMax) {
-                        const t = (originalY - stretchMax) / (stretchMin - stretchMax); // 0 at -4, 1 at -18
+                    // Reset positions to original state before applying transformation
+                    positions[i] = originalX;
+                    positions[i + 1] = originalY;
+                    positions[i + 2] = originalZ;
+
+                    let t = 0;
+                    if (originalZ >= stretchMax) {
+                        // Vertices above the stretch range are displaced fully.
+                        t = 1.0;
+                    } else if (originalZ > stretchMin) {
+                        // Vertices inside the stretch range are displaced proportionally.
+                        t = (originalZ - stretchMin) / (stretchMax - stretchMin);
+                    }
+                    
+                    // Apply displacement to stretch the model along the Z-axis
+                    if (t > 0) {
                         const displacement = t * stretchAmount * maxDisplacement;
-                        const newY = originalY - displacement;
-                        positions[i + 1] = newY;
-                    } else {
-                        positions[i + 1] = originalY;
+                        positions[i + 2] += displacement;
                     }
                 }
                 geometry.attributes.position.needsUpdate = true;
