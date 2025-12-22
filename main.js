@@ -275,6 +275,12 @@ loader.load('mayon_slice_FULL3.glb', function (gltf) {
         if (child.isMesh) {
             // Mark this mesh as processed to avoid infinite recursion
             child.userData.fresnelProcessed = true;
+
+            // Store original vertices for stretching
+            const geometry = child.geometry;
+            if (geometry.isBufferGeometry && geometry.attributes.position) {
+                geometry.userData.originalVertices = geometry.attributes.position.array.slice();
+            }
         }
     });
     

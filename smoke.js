@@ -42,7 +42,8 @@ function createSmoke() {
 
     const smokeGeometry = new THREE.PlaneGeometry(10, 10);
 
-    for (let i = 0; i < 50; i++) {
+    const numParticles = window.gasDensity || 50;
+    for (let i = 0; i < numParticles; i++) {
         const particle = new THREE.Mesh(smokeGeometry, smokeMaterial.clone());
         particle.position.set(
             (Math.random() - 0.5) * 1.5,
@@ -52,7 +53,8 @@ function createSmoke() {
         particle.position.add(new THREE.Vector3(0.29, 7.26, 0.78));
         particle.rotation.x = -Math.PI / 2;
         particle.userData.velocity = new THREE.Vector3(0, Math.random() * 0.1 + 0.1, 0);
-        particle.userData.birthTime = Date.now(); // Add birth time
+        // Stagger the birth time to create a continuous stream
+        particle.userData.birthTime = Date.now() - Math.random() * (window.smokeLifetime || 2.5) * 1000;
         particle.material.uniforms.opacity.value = Math.random() * 0.5 + 0.2;
         smokeParticles.push(particle);
         window.scene.add(particle);
@@ -63,18 +65,26 @@ function createSmoke() {
 
 function updateSmoke() {
     const now = Date.now();
+    const speed = window.smokeSpeed || 1.0;
+    const height = window.smokeHeight || 1.0;
+    const lifetime = window.smokeLifetime || 2.5;
+
     smokeParticles.forEach(particle => {
         const age = (now - particle.userData.birthTime) / 1000; // age in seconds
-        const speed = window.smokeSpeed || 0.5;
 
-        // Move particle based on velocity and speed
-        particle.position.add(particle.userData.velocity.clone().multiplyScalar(speed));
+        // Calculate scaled velocity
+        const scaledVelocity = particle.userData.velocity.clone();
+        scaledVelocity.y *= height;
+        scaledVelocity.multiplyScalar(speed);
+
+        // Move particle
+        particle.position.add(scaledVelocity);
         
         // Look at the camera
         particle.lookAt(camera.position);
 
-        // If particle is older than 2 seconds, reset it
-        if (age > 1.5) {
+        // If particle is older than its lifetime, reset it
+        if (age > lifetime) {
             particle.position.set(
                 (Math.random() - 0.5) * 1.5,
                 0,
@@ -84,8 +94,8 @@ function updateSmoke() {
             particle.userData.birthTime = now; // Reset birth time
         }
 
-        // Update opacity based on age (fade out over 2 seconds)
-        const life = age / 2.0; // 0.0 to 1.0
+        // Update opacity based on age (fade out over its lifetime)
+        const life = age / lifetime; // 0.0 to 1.0
         particle.material.uniforms.opacity.value = 1.0 - life;
     });
 }

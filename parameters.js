@@ -1,4 +1,8 @@
-window.smokeSpeed = 1.0; // Default smoke speed multiplier
+window.smokeSpeed = 1.0; // Default smoke speed
+window.smokeHeight = 1.0; // Default smoke height
+window.smokeLifetime = 2.5; // Default smoke lifetime
+window.gasDensity = 50; // Default gas density
+window.volcanoStretch = 1.0; // Default volcano stretch
 
 const parametersButton = document.getElementById('parameters-btn');
 const popup = document.getElementById('parameters-popup');
@@ -13,9 +17,78 @@ if (parametersButton && popup) {
     });
 }
 
-const temperatureSlider = document.getElementById('temperature-slider');
-if (temperatureSlider) {
-    temperatureSlider.addEventListener('input', (event) => {
+const smokeSpeedSlider = document.getElementById('smoke-speed-slider');
+if (smokeSpeedSlider) {
+    smokeSpeedSlider.addEventListener('input', (event) => {
         window.smokeSpeed = parseFloat(event.target.value);
+    });
+}
+
+const smokeHeightSlider = document.getElementById('smoke-height-slider');
+if (smokeHeightSlider) {
+    smokeHeightSlider.addEventListener('input', (event) => {
+        window.smokeHeight = parseFloat(event.target.value);
+    });
+}
+
+const smokeLifetimeSlider = document.getElementById('smoke-lifetime-slider');
+if (smokeLifetimeSlider) {
+    smokeLifetimeSlider.addEventListener('input', (event) => {
+        window.smokeLifetime = parseFloat(event.target.value);
+    });
+}
+
+const gasDensitySlider = document.getElementById('gas-density-slider');
+if (gasDensitySlider) {
+    gasDensitySlider.addEventListener('input', (event) => {
+        window.gasDensity = parseInt(event.target.value);
+    });
+}
+
+const volcanoStretchSlider = document.getElementById('volcano-stretch-slider');
+if (volcanoStretchSlider) {
+    volcanoStretchSlider.addEventListener('input', (event) => {
+        window.volcanoStretch = parseFloat(event.target.value);
+        stretchVolcano();
+    });
+}
+
+function stretchVolcano() {
+    if (!window.volcano) {
+        return;
+    }
+
+    window.volcano.traverse((child) => {
+        if (child.isMesh) {
+            const geometry = child.geometry;
+            if (geometry.isBufferGeometry && geometry.userData.originalVertices) {
+                const positions = geometry.attributes.position.array;
+                const originalPositions = geometry.userData.originalVertices;
+                const stretchSliderValue = window.volcanoStretch || 1.0;
+                const stretchAmount = stretchSliderValue - 1.0; // Range 0.0 to 2.0
+                const maxDisplacement = 10.0; 
+
+                const stretchMin = -18;
+                const stretchMax = -4;
+
+                for (let i = 0; i < originalPositions.length; i += 3) {
+                    const originalY = originalPositions[i + 1];
+                    
+                    positions[i] = originalPositions[i];
+                    positions[i + 1] = originalPositions[i+1];
+                    positions[i + 2] = originalPositions[i + 2];
+
+                    if (originalY >= stretchMin && originalY <= stretchMax) {
+                        const t = (originalY - stretchMax) / (stretchMin - stretchMax); // 0 at -4, 1 at -18
+                        const displacement = t * stretchAmount * maxDisplacement;
+                        const newY = originalY - displacement;
+                        positions[i + 1] = newY;
+                    } else {
+                        positions[i + 1] = originalY;
+                    }
+                }
+                geometry.attributes.position.needsUpdate = true;
+            }
+        }
     });
 }
