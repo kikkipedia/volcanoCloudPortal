@@ -66,10 +66,10 @@ function stretchVolcano() {
                 const originalPositions = geometry.userData.originalVertices;
                 const stretchSliderValue = window.volcanoStretch || 1.0;
                 const stretchAmount = stretchSliderValue - 1.0; // Range -1.0 to 1.0
-                const maxDisplacement = 10.0; 
+                const maxDisplacement = 30.0; 
 
-                const stretchMin = -18;
-                const stretchMax = -4;
+                const stretchMin = 90;
+                const stretchMax = 35;
 
                 for (let i = 0; i < originalPositions.length; i += 3) {
                     const originalX = originalPositions[i];
