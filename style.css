@@ -20,6 +20,14 @@ body {
     font-size: 14px;
 }
 
+#smoke-texture-preview {
+    position: absolute;
+    top: 10px;
+    left: 120px; /* Position next to coordinates */
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 5px;
+}
+
 #infobox {
     position: absolute;
     top: 50%;

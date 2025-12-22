@@ -4,45 +4,21 @@ function createSmoke() {
     console.log('createSmoke called');
 
     const textureLoader = new THREE.TextureLoader();
-    const smokeTexture = textureLoader.load('volcano_smoke1_whiteBG.png');
+    const smokeTexture = textureLoader.load('volcano_smoke1.png', () => {
+        console.log('Smoke texture loaded successfully');
+    }, undefined, (error) => {
+        console.error('Error loading smoke texture:', error);
+    });
 
-    const smokeMaterial = new THREE.ShaderMaterial({
-        uniforms: {
-            smokeTexture: { value: smokeTexture },
-            opacity: { value: 1.0 }
-        },
-        vertexShader: `
-            varying vec2 vUv;
-            void main() {
-                vUv = uv;
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-        `,
-        fragmentShader: `
-            uniform sampler2D smokeTexture;
-            uniform float opacity;
-            varying vec2 vUv;
-
-            void main() {
-                vec4 tex = texture2D(smokeTexture, vUv);
-
-                // Derive alpha from brightness (white background = transparent)
-                float lum = (tex.r + tex.g + tex.b) / 3.0;
-                float alpha = (1.0 - lum) * opacity;
-
-                // Smoke color (white smoke)
-                vec3 color = vec3(1.0) * alpha;
-
-                gl_FragColor = vec4(color, alpha);
-            }
-        `,
+    const smokeMaterial = new THREE.MeshBasicMaterial({
+        map: smokeTexture,
         transparent: true,
         depthWrite: false
     });
 
     const smokeGeometry = new THREE.PlaneGeometry(10, 10);
 
-    const numParticles = window.gasDensity || 50;
+    const numParticles = window.gasDensity || 25;
     for (let i = 0; i < numParticles; i++) {
         const particle = new THREE.Mesh(smokeGeometry, smokeMaterial.clone());
         particle.position.set(
@@ -55,7 +31,7 @@ function createSmoke() {
         particle.userData.velocity = new THREE.Vector3(0, 0.1, 0); // Baseline, will be scaled dynamically
         // Stagger the birth time to create a continuous stream
         particle.userData.birthTime = Date.now() - Math.random() * (window.smokeLifetime || 2.5) * 1000;
-        particle.material.uniforms.opacity.value = Math.random() * 0.5 + 0.2;
+        particle.material.opacity = Math.random() * 0.5 + 0.2;
         smokeParticles.push(particle);
         window.scene.add(particle);
     }
@@ -269,7 +245,7 @@ function updateSmoke() {
 
         // Apply opacity influence from gas density
 
-        particle.material.uniforms.opacity.value = (1.0 - life) * opacityInfluence;
+        particle.material.opacity = (1.0 - life) * opacityInfluence;
 
     });
 
