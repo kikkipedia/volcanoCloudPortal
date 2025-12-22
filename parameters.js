@@ -70,7 +70,7 @@ function stretchVolcano() {
     
     // Set smoke depth factor based on volcano stretch.
     // Deeper volcano (higher stretch value) means smaller factor, hence less vertical force for smoke.
-    window.smokeDepthFactor = 1.0 / stretchSliderValue;
+    // window.smokeDepthFactor = 1.0 / stretchSliderValue; // Removed: Logic moved to smoke.js
 
     window.volcano.traverse((child) => {
         if (child.isMesh) {
