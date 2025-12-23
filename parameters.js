@@ -1,9 +1,9 @@
+window.gasDensity = 30; // Default gas density (50% of 10-50)
+window.volcanoStretch = 2.0; // Default volcano stretch (50% of 1.0-3.0)
+window.temperature = 10; // Default temperature (50% of 0-20)
 window.smokeSpeed = 0.01; // Default smoke speed
 window.smokeHeight = 1.0; // Default smoke height
 window.smokeLifetime = 2.5; // Default smoke lifetime
-window.gasDensity = 50; // Default gas density
-window.volcanoStretch = 1.0; // Default volcano stretch
-window.temperature = 20; // Default temperature
 
 const parametersButton = document.getElementById('parameters-btn');
 const popup = document.getElementById('parameters-popup');
