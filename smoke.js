@@ -1,3 +1,4 @@
+let prevNumActiveParticles = 0;
 const smokeParticles = [];
 const loadedTextures = [];
 const smokeGeometry = new THREE.PlaneGeometry(10, 10);
@@ -95,26 +96,30 @@ function updateSmoke() {
     const gasDensity = window.gasDensity || 25;
     const gasAmountNormalized = gasDensity / 100;
 
-    // --- Gas Density adjustments based on user request ---
-
-    // 1. Particle birth: Control active particles based on gas density.
+    // --- Gas Density adjustments ---
     const numActiveParticles = Math.floor(gasAmountNormalized * smokeParticles.length);
-
-    // 2. Lifetime: Higher gas density leads to longer lifetime.
     const baseLifetime = window.smokeLifetime || 2.5;
-    const lifetime = baseLifetime * (0.2 + 0.8 * gasAmountNormalized); // Proportional to density, with a minimum.
-
-    // 3. Opacity: Higher gas density leads to higher opacity.
+    const lifetime = baseLifetime * (0.2 + 0.8 * gasAmountNormalized);
     const minOpacity = 0.1;
     const maxOpacity = 0.8;
     const opacityMultiplier = minOpacity + (maxOpacity - minOpacity) * gasAmountNormalized;
+    const scaleMultiplier = 0.5 + 1.5 * gasAmountNormalized;
 
-    // 4. Scale: Higher gas density leads to larger particles.
-    const scaleMultiplier = 0.5 + 1.5 * gasAmountNormalized; // Ranges from 0.5x to 2.0x
+    // --- Stagger birth of newly activated particles to prevent bursts ---
+    if (numActiveParticles > prevNumActiveParticles) {
+        for (let i = prevNumActiveParticles; i < numActiveParticles; i++) {
+            if (smokeParticles[i]) {
+                // Initialize with a random age so they don't all appear at once
+                smokeParticles[i].userData.birthTime = now - Math.random() * lifetime * 1000;
+            }
+        }
+    }
+    prevNumActiveParticles = numActiveParticles;
 
     // --- Temperature-based dynamic adjustments ---
     let effectiveVerticalForce = 0.05;
     let effectiveBuoyancyMultiplier = 1.0;
+    // ... (rest of temperature logic is the same)
     let effectiveExpansionRateMultiplier = 1.0;
     let effectiveHorizontalDriftX = 0.005 * horizontalMultiplier;
     let effectiveHorizontalDriftZ = 0.01 * horizontalMultiplier;
@@ -137,17 +142,14 @@ function updateSmoke() {
     effectiveVerticalForce *= speed;
 
     smokeParticles.forEach((particle, index) => {
-        // If particle is outside the active range, hide it and reset its time.
         if (index >= numActiveParticles) {
             particle.visible = false;
-            particle.userData.birthTime = now; // Reset so it starts fresh if activated
             return;
         }
         particle.visible = true;
 
         const age = (now - particle.userData.birthTime) / 1000;
 
-        // If particle is older than its lifetime, reset it
         if (age > lifetime) {
             particle.position.set(
                 (Math.random() - 0.5) * 1.5,
@@ -155,7 +157,8 @@ function updateSmoke() {
                 (Math.random() - 0.5) * 1.5
             );
             particle.position.add(new THREE.Vector3(0.29, 7.26, 0.78));
-            particle.userData.birthTime = now; // Reset birth time
+            // Add a small random offset to the reset time to de-synchronize particles
+            particle.userData.birthTime = now - Math.random() * 500;
             particle.scale.set(0.1, 0.1, 0.1);
             const randomTexture = loadedTextures[Math.floor(Math.random() * loadedTextures.length)];
             particle.material.map = randomTexture;
@@ -183,15 +186,14 @@ function updateSmoke() {
             particle.rotation.y += 0.01;
         }
 
-        const growthProgress = age / lifetime;
+        const growthProgress = Math.min(age / lifetime, 1.0);
         const finalMaxScale = particle.userData.maxScale * scaleMultiplier;
         const currentScale = 0.1 + (finalMaxScale - 0.1) * growthProgress;
         particle.scale.set(currentScale, currentScale, currentScale);
 
         particle.lookAt(camera.position);
 
-        // Update opacity based on age and new gas density logic
-        const life = Math.min(age / lifetime, 1.0); // Clamp life to 1.0
+        const life = Math.min(age / lifetime, 1.0);
         particle.material.opacity = (1.0 - life) * opacityMultiplier;
     });
 }
