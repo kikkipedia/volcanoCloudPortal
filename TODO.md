@@ -1,7 +1,5 @@
-# TODO: Smooth Medium-to-High Temperature Smoke Transition
+# TODO: Add Second Ash Spawning Dependency for Deep Volcanoes
 
-## Tasks
-- [ ] Interpolate lifetime multiplier from 1.0 at 66 to 3.0 at 100 for smooth medium-high transition
-- [ ] Interpolate vertical force from 0.375 at 66 to 0.5 at 100 for taller high-temperature column
-- [ ] Test smoke behavior with different temperature values
-- [ ] Verify smooth transition visually
+- [x] Add a new condition in updateAsh() function for ash spawning when gasDensity > 40 and stretch > 2 (deep volcano)
+- [x] Mirror the existing particle activation logic for the new condition
+- [x] Modify deep volcano ash to have longer lifetime and slower fall
