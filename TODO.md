@@ -1,3 +1,4 @@
-- [ ] Replace ShaderMaterial with MeshBasicMaterial in createSmoke function
-- [ ] Update opacity assignments in createSmoke loop to use material.opacity instead of uniforms
-- [ ] Update opacity assignments in updateSmoke function to use material.opacity instead of uniforms
+# TODO: Set Default Drifting Speed to Slower Value
+
+- [x] Update index.html: Change the smoke-speed-slider min attribute to "0.01" and value to "0.01"
+- [x] Update parameters.js: Change window.smokeSpeed from 0.1 to 0.01

@@ -1,4 +1,4 @@
-window.smokeSpeed = 1.0; // Default smoke speed
+window.smokeSpeed = 0.01; // Default smoke speed
 window.smokeHeight = 1.0; // Default smoke height
 window.smokeLifetime = 2.5; // Default smoke lifetime
 window.gasDensity = 50; // Default gas density

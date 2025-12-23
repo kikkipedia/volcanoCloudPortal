@@ -1,42 +1,71 @@
 const smokeParticles = [];
+const loadedTextures = [];
 
 function createSmoke() {
     console.log('createSmoke called');
 
     const textureLoader = new THREE.TextureLoader();
-    const smokeTexture = textureLoader.load('volcano_smoke1.png', () => {
-        console.log('Smoke texture loaded successfully');
-    }, undefined, (error) => {
-        console.error('Error loading smoke texture:', error);
+
+    // Define the three texture paths
+    const texturePaths = ['volcano_smoke1.png', 'smoke_var2.png', 'smoke_var3.png'];
+
+    // Load all textures asynchronously
+    const loadPromises = texturePaths.map(path => {
+        return new Promise((resolve, reject) => {
+            textureLoader.load(
+                path,
+                (texture) => {
+                    console.log(`Smoke texture loaded successfully: ${path}`);
+                    resolve(texture);
+                },
+                undefined,
+                (error) => {
+                    console.error('Error loading smoke texture:', error);
+                    reject(error);
+                }
+            );
+        });
     });
 
-    const smokeMaterial = new THREE.MeshBasicMaterial({
-        map: smokeTexture,
-        transparent: true,
-        depthWrite: false
+    Promise.all(loadPromises).then(textures => {
+        loadedTextures.push(...textures);
+        console.log('All smoke textures loaded successfully');
+
+        const smokeGeometry = new THREE.PlaneGeometry(10, 10);
+
+        const numParticles = window.gasDensity || 25;
+        for (let i = 0; i < numParticles; i++) {
+            // Randomly select one of the loaded textures
+            const randomTexture = loadedTextures[Math.floor(Math.random() * loadedTextures.length)];
+
+            const smokeMaterial = new THREE.MeshBasicMaterial({
+                map: randomTexture,
+                transparent: true,
+                depthWrite: false
+            });
+
+            const particle = new THREE.Mesh(smokeGeometry, smokeMaterial);
+            particle.position.set(
+                (Math.random() - 0.5) * 1.5,
+                0,
+                (Math.random() - 0.5) * 1.5
+            );
+            particle.position.add(new THREE.Vector3(0.29, 7.26, 0.78));
+            particle.rotation.x = -Math.PI / 2;
+            particle.scale.set(0.1, 0.1, 0.1); // Start small
+            particle.userData.velocity = new THREE.Vector3(0, 0.1, 0); // Baseline, will be scaled dynamically
+            // Stagger the birth time to create a continuous stream
+            particle.userData.birthTime = Date.now() - Math.random() * (window.smokeLifetime || 2.5) * 1000;
+            particle.userData.maxScale = 0.1 + Math.random() * 1.5; // Random max scale between 0.1 and 1.6
+            particle.material.opacity = Math.random() * 0.5 + 0.2;
+            smokeParticles.push(particle);
+            window.scene.add(particle);
+        }
+
+        console.log('Smoke particles:', smokeParticles.length);
+    }).catch(error => {
+        console.error('Failed to load smoke textures:', error);
     });
-
-    const smokeGeometry = new THREE.PlaneGeometry(10, 10);
-
-    const numParticles = window.gasDensity || 25;
-    for (let i = 0; i < numParticles; i++) {
-        const particle = new THREE.Mesh(smokeGeometry, smokeMaterial.clone());
-        particle.position.set(
-            (Math.random() - 0.5) * 1.5,
-            0,
-            (Math.random() - 0.5) * 1.5
-        );
-        particle.position.add(new THREE.Vector3(0.29, 7.26, 0.78));
-        particle.rotation.x = -Math.PI / 2;
-        particle.userData.velocity = new THREE.Vector3(0, 0.1, 0); // Baseline, will be scaled dynamically
-        // Stagger the birth time to create a continuous stream
-        particle.userData.birthTime = Date.now() - Math.random() * (window.smokeLifetime || 2.5) * 1000;
-        particle.material.opacity = Math.random() * 0.5 + 0.2;
-        smokeParticles.push(particle);
-        window.scene.add(particle);
-    }
-
-    console.log('Smoke particles:', smokeParticles.length);
 }
 
 function updateSmoke() {
@@ -57,55 +86,45 @@ function updateSmoke() {
 
 
 
-    // --- Temperature-based dynamic adjustments (from previous task) ---
+    // --- Temperature-based dynamic adjustments ---
 
     let effectiveVerticalForce = 0.1; // Base upward force
-
-    let effectiveHorizontalDriftX = 0;
-
-    let effectiveHorizontalDriftZ = 0;
 
     let effectiveBuoyancyMultiplier = 1.0; // How much buoyancy is applied
 
     let effectiveExpansionRateMultiplier = 1.0; // How much expansion is applied
 
+    if (temperature <= 33) { // Low: Almost no rise
 
-
-    if (temperature <= 33) { // Low: Flat, drifting smoke, sideways along x
-
-        effectiveVerticalForce = 0.02; // Very low vertical push
-
-        effectiveHorizontalDriftX = 0.05; // Significant X drift
+        effectiveVerticalForce = 0.05; // Very low vertical push
 
         effectiveBuoyancyMultiplier = 0.5; // Less buoyancy
 
         effectiveExpansionRateMultiplier = 1.5; // More expansion
 
-    } else if (temperature <= 66) { // Medium: Rising plume with curl, slightly along x
+    } else if (temperature <= 66) { // Medium: Moderate rise
 
-        effectiveVerticalForce = 0.08; // Moderate vertical push
-
-        effectiveHorizontalDriftX = 0.02; // Slight X drift
-
-        effectiveHorizontalDriftZ = 0.02; // Slight Z drift for curl effect
+        effectiveVerticalForce = 0.20; // Moderate vertical push
 
         effectiveBuoyancyMultiplier = 1.0; // Normal buoyancy
 
         effectiveExpansionRateMultiplier = 1.0; // Normal expansion
 
-    } else { // High: Tall, coherent column
+    } else { // High: High rising column
 
-        effectiveVerticalForce = 0.15; // Strong vertical push
-
-        effectiveHorizontalDriftX = 0.005; // Minimal X drift
-
-        effectiveHorizontalDriftZ = 0.005; // Minimal Z drift
+        effectiveVerticalForce = 0.375; // Strong vertical push
 
         effectiveBuoyancyMultiplier = 1.5; // More buoyancy
 
         effectiveExpansionRateMultiplier = 0.5; // Less expansion (more coherent)
 
     }
+
+    // Fixed consistent horizontal drifts, slower than previous variable speeds
+
+    let effectiveHorizontalDriftX = 0.005;
+
+    let effectiveHorizontalDriftZ = 0.01;
 
     // --- End temperature adjustments ---
 
@@ -117,7 +136,7 @@ function updateSmoke() {
 
     const maxOpacityInfluence = 0.4; // From user's formula
 
-    const maxTurbulenceStrengthInfluence = 0.6; // From user's formula
+    const maxTurbulenceStrengthInfluence = 0.3; // From user's formula
 
 
 
@@ -149,7 +168,7 @@ function updateSmoke() {
 
         // This makes the smoke dynamic based on slider changes
 
-        const randomX = (Math.random() - 0.5) * effectiveHorizontalDriftX;
+        const randomX = effectiveHorizontalDriftX; // Continuous right drift
 
         const randomY = Math.random() * effectiveVerticalForce + effectiveVerticalForce / 2; // Keep Y a bit random within its range
 
@@ -195,13 +214,11 @@ function updateSmoke() {
 
         
 
-        // Increase expansion rate based on temperature and age, scaled by effectiveExpansionRateMultiplier
+        // Grow scale from 0.1 to maxScale over lifetime, with variety in maxScale
 
-        const baseExpansionRate = 0.05; // Base rate, can be tuned
+        const growthProgress = age / lifetime;
 
-        const expansion = age * baseExpansionRate * (temperature / 100) * effectiveExpansionRateMultiplier;
-
-        const currentScale = 1.0 + expansion;
+        const currentScale = 0.1 + (particle.userData.maxScale - 0.1) * growthProgress;
 
         particle.scale.set(currentScale, currentScale, currentScale);
 
@@ -214,27 +231,19 @@ function updateSmoke() {
 
 
         // If particle is older than its lifetime, reset it
-
         if (age > lifetime) {
-
             particle.position.set(
-
                 (Math.random() - 0.5) * 1.5,
-
                 0,
-
                 (Math.random() - 0.5) * 1.5
-
             );
-
             particle.position.add(new THREE.Vector3(0.29, 7.26, 0.78));
-
             particle.userData.birthTime = now; // Reset birth time
-
             // Reset particle scale when it resets
-
-            particle.scale.set(1.0, 1.0, 1.0);
-
+            particle.scale.set(0.1, 0.1, 0.1);
+            // Randomly assign a new texture
+            const randomTexture = loadedTextures[Math.floor(Math.random() * loadedTextures.length)];
+            particle.material.map = randomTexture;
         }
 
 
