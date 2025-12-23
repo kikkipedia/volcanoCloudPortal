@@ -57,7 +57,8 @@ const skyMaterial = new THREE.ShaderMaterial({
 const sky = new THREE.Mesh(skyGeometry, skyMaterial);
 window.scene.add(sky);
 
-createSmoke();
+createSmokeParticles();
+createAshParticles();
 
 // Custom Fresnel shader material for edge glow effect
 function createFresnelMaterial(fresnelColor = new THREE.Color(0x00ffff), fresnelPower = 2.0, fresnelIntensity = 1.0) {
@@ -324,6 +325,7 @@ function animate() {
     requestAnimationFrame(animate);
     // Update smoke
     updateSmoke();
+    updateAsh();
     // Update controls
     controls.update();
     // Render the scene

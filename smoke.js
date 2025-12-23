@@ -7,7 +7,10 @@ function lerp(a, b, alpha) {
     return a + alpha * (b - a);
 }
 
-function createSmoke() {
+
+
+
+function createSmokeParticles() {
     console.log('createSmoke called');
 
     const textureLoader = new THREE.TextureLoader();
@@ -122,6 +125,11 @@ function updateSmoke() {
     const opacityMultiplier = minOpacity + (maxOpacity - minOpacity) * gasAmountNormalized;
     const scaleMultiplier = 0.5 + 1.5 * gasAmountNormalized;
 
+    // --- Color adjustment based on Gas Density ---
+    const baseColor = new THREE.Color(0x808080); // Greyish
+    const brightColor = new THREE.Color(0xffffff); // White
+    const finalColor = new THREE.Color().lerpColors(baseColor, brightColor, 1.0 - gasAmountNormalized);
+
     // --- Stagger birth of newly activated particles to prevent bursts ---
     if (numActiveParticles > prevNumActiveParticles) {
         const numNew = numActiveParticles - prevNumActiveParticles;
@@ -168,6 +176,15 @@ function updateSmoke() {
         
         let totalUpwardForce = (Math.random() * effectiveVerticalForce + effectiveVerticalForce / 2) + (temperature * 0.001 * effectiveBuoyancyMultiplier);
 
+        // --- Burst logic for shallow volcano ---
+        if (stretch < 0.9) { // Shallow volcano condition
+            if (age < 0.2) {
+                totalUpwardForce *= 4.0; // Stronger initial burst
+            } else {
+                totalUpwardForce *= 0.1; // Slow down significantly after burst
+            }
+        }
+
         const ageProgress = Math.min(1.0, age / lifetime);
         let ageDampingFactor = 0.85;
         if (stretch < 0.9) ageDampingFactor = 0.95; // Faster die down for shallow
@@ -192,5 +209,6 @@ function updateSmoke() {
 
         const life = Math.min(age / lifetime, 1.0);
         particle.material.opacity = (1.0 - life) * opacityMultiplier;
+        particle.material.color.set(finalColor);
     });
 }
