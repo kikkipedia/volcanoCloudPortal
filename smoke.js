@@ -73,71 +73,52 @@ function updateSmoke() {
     const now = Date.now();
     const speed = window.smokeSpeed || 0.01;
     const height = window.smokeHeight || 1.0;
-    const depthFactor = window.smokeDepthFactor || 1.0;
+
+    // Depth-based movement speed
     const stretch = window.volcanoStretch || 1.0;
-    let depthCategory = 'medium';
-    if (stretch < 0.9) depthCategory = 'shallow';
-    else if (stretch > 1.1) depthCategory = 'deep';
+    const normalizedStretch = Math.max(0, Math.min(1, (stretch - 1.0) / 2.0));
+    const depthDampening = 1.0 - normalizedStretch * 0.8;
 
-    let verticalMultiplier = 1.0;
-    let horizontalMultiplier = 1.0;
-    if (depthCategory === 'shallow') {
-        verticalMultiplier = 1.5;
-        horizontalMultiplier = 0.5;
-    } else if (depthCategory === 'deep') {
-        verticalMultiplier = 0.5;
-        horizontalMultiplier = 1.5;
-    } else {
-        verticalMultiplier = depthFactor;
-    }
-    verticalMultiplier *= height;
-
-    const temperature = (window.temperature || 10) * 5;
+    const temperature = (window.temperature ?? 10) * 5;
     const gasDensity = window.gasDensity || 25;
     const gasAmountNormalized = gasDensity / 100;
 
+    // --- Lifetime Calculation (with temperature influence) ---
+    const baseLifetime = window.smokeLifetime || 2.5;
+    let temperatureLifetimeMultiplier = 1.0;
+    if (temperature > 66) {
+        temperatureLifetimeMultiplier = 2.0; // Double lifetime for high temp
+    }
+    const lifetime = baseLifetime * (0.2 + 0.8 * gasAmountNormalized) * temperatureLifetimeMultiplier;
+
     // --- Gas Density adjustments ---
     const numActiveParticles = Math.floor(gasAmountNormalized * smokeParticles.length);
-    const baseLifetime = window.smokeLifetime || 2.5;
-    const lifetime = baseLifetime * (0.2 + 0.8 * gasAmountNormalized);
     const minOpacity = 0.1;
     const maxOpacity = 0.8;
     const opacityMultiplier = minOpacity + (maxOpacity - minOpacity) * gasAmountNormalized;
     const scaleMultiplier = 0.5 + 1.5 * gasAmountNormalized;
 
-    // --- Stagger birth of newly activated particles to prevent bursts ---
+    // --- Stagger birth of newly activated particles ---
     if (numActiveParticles > prevNumActiveParticles) {
         for (let i = prevNumActiveParticles; i < numActiveParticles; i++) {
             if (smokeParticles[i]) {
-                // Initialize with a random age so they don't all appear at once
                 smokeParticles[i].userData.birthTime = now - Math.random() * lifetime * 1000;
             }
         }
     }
     prevNumActiveParticles = numActiveParticles;
 
-    // --- Temperature-based dynamic adjustments ---
-    let effectiveVerticalForce = 0.05;
-    let effectiveBuoyancyMultiplier = 1.0;
-    // ... (rest of temperature logic is the same)
-    let effectiveExpansionRateMultiplier = 1.0;
-    let effectiveHorizontalDriftX = 0.005 * horizontalMultiplier;
-    let effectiveHorizontalDriftZ = 0.01 * horizontalMultiplier;
+    // --- Temperature-based physics (High temp = Medium temp forces) ---
+    let effectiveVerticalForce = 0.1; // Default for Medium/High temp
+    let effectiveBuoyancyMultiplier = 0.8; // Default for Medium/High temp
+    let effectiveHorizontalDriftX = 0.01;
+    let effectiveHorizontalDriftZ = 0.005;
 
-    if (temperature <= 33) {
-        effectiveVerticalForce = 0.005;
+    if (temperature <= 33) { // Low temp values
+        effectiveVerticalForce = 0.01;
         effectiveBuoyancyMultiplier = 0.1;
-        effectiveExpansionRateMultiplier = 1.5;
-        effectiveHorizontalDriftX = 0.02 * horizontalMultiplier;
-        effectiveHorizontalDriftZ = 0.04 * horizontalMultiplier;
-    } else if (temperature <= 66) {
-        effectiveVerticalForce = 0.25;
-        effectiveBuoyancyMultiplier = 1.0;
-        effectiveExpansionRateMultiplier = 1.0;
-    } else {
-        effectiveVerticalForce = 0.375;
-        effectiveBuoyancyMultiplier = 1.5;
-        effectiveExpansionRateMultiplier = 0.5;
+        effectiveHorizontalDriftX = 0.015;
+        effectiveHorizontalDriftZ = 0.015;
     }
     effectiveVerticalForce *= speed;
 
@@ -151,41 +132,36 @@ function updateSmoke() {
         const age = (now - particle.userData.birthTime) / 1000;
 
         if (age > lifetime) {
-            particle.position.set(
-                (Math.random() - 0.5) * 1.5,
-                0,
-                (Math.random() - 0.5) * 1.5
-            );
+            particle.position.set((Math.random() - 0.5) * 1.5, 0, (Math.random() - 0.5) * 1.5);
             particle.position.add(new THREE.Vector3(0.29, 7.26, 0.78));
-            // Add a small random offset to the reset time to de-synchronize particles
             particle.userData.birthTime = now - Math.random() * 500;
             particle.scale.set(0.1, 0.1, 0.1);
             const randomTexture = loadedTextures[Math.floor(Math.random() * loadedTextures.length)];
             particle.material.map = randomTexture;
         }
 
-        // --- Particle update logic ---
-        const randomX = effectiveHorizontalDriftX;
-        const randomY = Math.random() * effectiveVerticalForce + effectiveVerticalForce / 2;
-        const randomZ = (Math.random() - 0.5) * effectiveHorizontalDriftZ;
-        const scaledVelocity = new THREE.Vector3(randomX, randomY, randomZ);
-
-        if (depthCategory === 'shallow') {
-            const decayFactor = Math.max(0.3, 1 - age / lifetime);
-            scaledVelocity.y *= verticalMultiplier * decayFactor;
+        // --- Particle velocity ---
+        let velX, velZ;
+        if (temperature <= 33) {
+            velX = (Math.random() - 0.5) * effectiveHorizontalDriftX;
+            velZ = (Math.random() - 0.5) * effectiveHorizontalDriftZ;
         } else {
-            scaledVelocity.y *= verticalMultiplier;
+            velX = effectiveHorizontalDriftX;
+            velZ = effectiveHorizontalDriftZ;
         }
+        
+        const velY = Math.random() * effectiveVerticalForce + effectiveVerticalForce / 2;
+        const scaledVelocity = new THREE.Vector3(velX, velY, velZ);
+
+        scaledVelocity.y *= height;
+        scaledVelocity.multiplyScalar(depthDampening);
 
         const buoyancy = temperature * 0.001 * effectiveBuoyancyMultiplier;
         scaledVelocity.y += buoyancy;
 
         particle.position.add(scaledVelocity);
 
-        if (temperature > 33 && temperature <= 66) {
-            particle.rotation.y += 0.01;
-        }
-
+        // --- Update scale, orientation, and opacity ---
         const growthProgress = Math.min(age / lifetime, 1.0);
         const finalMaxScale = particle.userData.maxScale * scaleMultiplier;
         const currentScale = 0.1 + (finalMaxScale - 0.1) * growthProgress;
