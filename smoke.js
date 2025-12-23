@@ -3,6 +3,10 @@ const smokeParticles = [];
 const loadedTextures = [];
 const smokeGeometry = new THREE.PlaneGeometry(10, 10);
 
+function lerp(a, b, alpha) {
+    return a + alpha * (b - a);
+}
+
 function createSmoke() {
     console.log('createSmoke called');
 
@@ -83,12 +87,32 @@ function updateSmoke() {
     const gasDensity = window.gasDensity || 25;
     const gasAmountNormalized = gasDensity / 100;
 
-    // --- Lifetime Calculation (with remapped temperature influence) ---
-    const baseLifetime = window.smokeLifetime || 2.5;
-    let temperatureLifetimeMultiplier = 1.0;
-    if (temperature > 66) {
-        temperatureLifetimeMultiplier = 3.0; // Significantly longer lifetime for high temp
+    // --- Smoothed Temperature-based physics using interpolation ---
+    const tempLow = { lf: 1.0, vf: 0.01, bm: 0.1, hdx: 0.015, hdz: 0.015 }; // Low temp properties
+    const tempMed = { lf: 1.0, vf: 0.375, bm: 1.5, hdx: 0.005, hdz: 0.01 }; // Medium temp properties
+    const tempHigh = { lf: 3.0, vf: 0.5, bm: 1.5, hdx: 0.005, hdz: 0.01 }; // High temp properties
+
+    let temperatureLifetimeMultiplier, effectiveVerticalForce, effectiveBuoyancyMultiplier, effectiveHorizontalDriftX, effectiveHorizontalDriftZ;
+
+    if (temperature <= 50) { // Interpolate between Low and Medium
+        const t = temperature / 50;
+        temperatureLifetimeMultiplier = lerp(tempLow.lf, tempMed.lf, t);
+        effectiveVerticalForce = lerp(tempLow.vf, tempMed.vf, t);
+        effectiveBuoyancyMultiplier = lerp(tempLow.bm, tempMed.bm, t);
+        effectiveHorizontalDriftX = lerp(tempLow.hdx, tempMed.hdx, t);
+        effectiveHorizontalDriftZ = lerp(tempLow.hdz, tempMed.hdz, t);
+    } else { // Interpolate between Medium and High
+        const t = (temperature - 50) / 50;
+        temperatureLifetimeMultiplier = lerp(tempMed.lf, tempHigh.lf, t);
+        effectiveVerticalForce = lerp(tempMed.vf, tempHigh.vf, t);
+        effectiveBuoyancyMultiplier = lerp(tempMed.bm, tempHigh.bm, t);
+        effectiveHorizontalDriftX = lerp(tempMed.hdx, tempHigh.hdx, t);
+        effectiveHorizontalDriftZ = lerp(tempMed.hdz, tempHigh.hdz, t);
     }
+
+    effectiveVerticalForce *= speed;
+
+    const baseLifetime = window.smokeLifetime || 2.5;
     const lifetime = baseLifetime * (0.2 + 0.8 * gasAmountNormalized) * temperatureLifetimeMultiplier;
 
     // --- Gas Density adjustments ---
@@ -98,36 +122,18 @@ function updateSmoke() {
     const opacityMultiplier = minOpacity + (maxOpacity - minOpacity) * gasAmountNormalized;
     const scaleMultiplier = 0.5 + 1.5 * gasAmountNormalized;
 
-    // --- Stagger birth of newly activated particles ---
+    // --- Stagger birth of newly activated particles to prevent bursts ---
     if (numActiveParticles > prevNumActiveParticles) {
+        const numNew = numActiveParticles - prevNumActiveParticles;
         for (let i = prevNumActiveParticles; i < numActiveParticles; i++) {
             if (smokeParticles[i]) {
-                smokeParticles[i].userData.birthTime = now - Math.random() * lifetime * 1000;
+                const stagger = ((i - prevNumActiveParticles) / numNew) * 1000; // Stagger over 1 second
+                smokeParticles[i].userData.birthTime = now - stagger;
             }
         }
     }
     prevNumActiveParticles = numActiveParticles;
 
-    // --- Remapped Temperature-based physics ---
-    let effectiveVerticalForce, effectiveBuoyancyMultiplier, effectiveHorizontalDriftX, effectiveHorizontalDriftZ;
-
-    if (temperature <= 33) { // Low temp: Slow, jiggling smoke
-        effectiveVerticalForce = 0.01;
-        effectiveBuoyancyMultiplier = 0.1;
-        effectiveHorizontalDriftX = 0.015;
-        effectiveHorizontalDriftZ = 0.015;
-    } else if (temperature <= 66) { // Medium temp: Strong, vertical plume
-        effectiveVerticalForce = 0.375;
-        effectiveBuoyancyMultiplier = 1.5;
-        effectiveHorizontalDriftX = 0.005;
-        effectiveHorizontalDriftZ = 0.01;
-    } else { // High temp: Same strong forces as medium, but with longer lifetime
-        effectiveVerticalForce = 0.375;
-        effectiveBuoyancyMultiplier = 1.5;
-        effectiveHorizontalDriftX = 0.005;
-        effectiveHorizontalDriftZ = 0.01;
-    }
-    effectiveVerticalForce *= speed;
 
     smokeParticles.forEach((particle, index) => {
         if (index >= numActiveParticles) {
@@ -141,7 +147,7 @@ function updateSmoke() {
         if (age > lifetime) {
             particle.position.set((Math.random() - 0.5) * 1.5, 0, (Math.random() - 0.5) * 1.5);
             particle.position.add(new THREE.Vector3(0.29, 7.26, 0.78));
-            particle.userData.birthTime = now - Math.random() * 500;
+            particle.userData.birthTime = now - Math.random() * 500; // Stagger respawn
             particle.scale.set(0.1, 0.1, 0.1);
             const randomTexture = loadedTextures[Math.floor(Math.random() * loadedTextures.length)];
             particle.material.map = randomTexture;
@@ -149,10 +155,13 @@ function updateSmoke() {
 
         // --- Particle velocity ---
         let velX, velZ;
-        if (temperature <= 33) { // Jiggle for low temp
-            velX = (Math.random() - 0.5) * effectiveHorizontalDriftX;
-            velZ = (Math.random() - 0.5) * effectiveHorizontalDriftZ;
-        } else { // Directed drift for medium and high temp
+        if (temperature <= 50) { // Jiggle for low-mid temp range
+            const t = temperature / 50;
+            const driftX = lerp(tempLow.hdx, tempMed.hdx, t);
+            const driftZ = lerp(tempLow.hdz, tempMed.hdz, t);
+            velX = (Math.random() - 0.5) * driftX;
+            velZ = (Math.random() - 0.5) * driftZ;
+        } else { // Directed drift for mid-high temp
             velX = effectiveHorizontalDriftX;
             velZ = effectiveHorizontalDriftZ;
         }
@@ -160,7 +169,9 @@ function updateSmoke() {
         let totalUpwardForce = (Math.random() * effectiveVerticalForce + effectiveVerticalForce / 2) + (temperature * 0.001 * effectiveBuoyancyMultiplier);
 
         const ageProgress = Math.min(1.0, age / lifetime);
-        const ageDamping = 1.0 - (ageProgress * 0.85);
+        let ageDampingFactor = 0.85;
+        if (stretch < 0.9) ageDampingFactor = 0.95; // Faster die down for shallow
+        const ageDamping = 1.0 - (ageProgress * ageDampingFactor);
         totalUpwardForce *= ageDamping;
         
         const velY = totalUpwardForce;
