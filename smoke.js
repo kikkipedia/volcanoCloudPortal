@@ -83,11 +83,11 @@ function updateSmoke() {
     const gasDensity = window.gasDensity || 25;
     const gasAmountNormalized = gasDensity / 100;
 
-    // --- Lifetime Calculation (with temperature influence) ---
+    // --- Lifetime Calculation (with remapped temperature influence) ---
     const baseLifetime = window.smokeLifetime || 2.5;
     let temperatureLifetimeMultiplier = 1.0;
     if (temperature > 66) {
-        temperatureLifetimeMultiplier = 2.0; // Double lifetime for high temp
+        temperatureLifetimeMultiplier = 3.0; // Significantly longer lifetime for high temp
     }
     const lifetime = baseLifetime * (0.2 + 0.8 * gasAmountNormalized) * temperatureLifetimeMultiplier;
 
@@ -108,17 +108,24 @@ function updateSmoke() {
     }
     prevNumActiveParticles = numActiveParticles;
 
-    // --- Temperature-based physics (High temp = Medium temp forces) ---
-    let effectiveVerticalForce = 0.1; // Default for Medium/High temp
-    let effectiveBuoyancyMultiplier = 0.8; // Default for Medium/High temp
-    let effectiveHorizontalDriftX = 0.01;
-    let effectiveHorizontalDriftZ = 0.005;
+    // --- Remapped Temperature-based physics ---
+    let effectiveVerticalForce, effectiveBuoyancyMultiplier, effectiveHorizontalDriftX, effectiveHorizontalDriftZ;
 
-    if (temperature <= 33) { // Low temp values
+    if (temperature <= 33) { // Low temp: Slow, jiggling smoke
         effectiveVerticalForce = 0.01;
         effectiveBuoyancyMultiplier = 0.1;
         effectiveHorizontalDriftX = 0.015;
         effectiveHorizontalDriftZ = 0.015;
+    } else if (temperature <= 66) { // Medium temp: Strong, vertical plume
+        effectiveVerticalForce = 0.375;
+        effectiveBuoyancyMultiplier = 1.5;
+        effectiveHorizontalDriftX = 0.005;
+        effectiveHorizontalDriftZ = 0.01;
+    } else { // High temp: Same strong forces as medium, but with longer lifetime
+        effectiveVerticalForce = 0.375;
+        effectiveBuoyancyMultiplier = 1.5;
+        effectiveHorizontalDriftX = 0.005;
+        effectiveHorizontalDriftZ = 0.01;
     }
     effectiveVerticalForce *= speed;
 
@@ -142,22 +149,25 @@ function updateSmoke() {
 
         // --- Particle velocity ---
         let velX, velZ;
-        if (temperature <= 33) {
+        if (temperature <= 33) { // Jiggle for low temp
             velX = (Math.random() - 0.5) * effectiveHorizontalDriftX;
             velZ = (Math.random() - 0.5) * effectiveHorizontalDriftZ;
-        } else {
+        } else { // Directed drift for medium and high temp
             velX = effectiveHorizontalDriftX;
             velZ = effectiveHorizontalDriftZ;
         }
         
-        const velY = Math.random() * effectiveVerticalForce + effectiveVerticalForce / 2;
+        let totalUpwardForce = (Math.random() * effectiveVerticalForce + effectiveVerticalForce / 2) + (temperature * 0.001 * effectiveBuoyancyMultiplier);
+
+        const ageProgress = Math.min(1.0, age / lifetime);
+        const ageDamping = 1.0 - (ageProgress * 0.85);
+        totalUpwardForce *= ageDamping;
+        
+        const velY = totalUpwardForce;
         const scaledVelocity = new THREE.Vector3(velX, velY, velZ);
 
         scaledVelocity.y *= height;
         scaledVelocity.multiplyScalar(depthDampening);
-
-        const buoyancy = temperature * 0.001 * effectiveBuoyancyMultiplier;
-        scaledVelocity.y += buoyancy;
 
         particle.position.add(scaledVelocity);
 
