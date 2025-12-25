@@ -6,7 +6,7 @@ function createAshParticles() {
     console.log('createAsh called');
 
     const textureLoader = new THREE.TextureLoader();
-    const ashTexturePaths = ['ash1.png', 'ash2.png'];
+    const ashTexturePaths = ['ash1.png', 'ash2.png', 'ash3.png'];
 
     const loadPromises = ashTexturePaths.map(path => {
         return new Promise((resolve, reject) => {
@@ -64,8 +64,8 @@ function updateAsh() {
     const stretch = window.volcanoStretch || 1.0;
     const gasDensity = window.gasDensity || 25;
 
-    // Condition for ash burst
-    if (gasDensity > 40 && stretch < 2 && Math.random() < 0.1) {
+    // Condition for ash in shallow volcano
+    if (gasDensity > 40 && stretch < 2 && Math.random() < 0.01) {
         // Find an inactive ash particle to launch
         const inactiveAsh = ashParticles.find(p => !p.userData.isActive);
         if (inactiveAsh) {
@@ -73,20 +73,25 @@ function updateAsh() {
             inactiveAsh.material.visible = true;
             inactiveAsh.userData.isActive = true;
             inactiveAsh.userData.birthTime = now;
+            inactiveAsh.userData.lifetime = 0.4 + Math.random() * 0.3; // Longer lifetime for deep volcano ash
             inactiveAsh.position.set(
-                (Math.random() - 0.5) * 1.5,
+                (Math.random() - 0.1) * 1.5,
                 0,
-                (Math.random() - 0.5) * 1.5
+                (Math.random() - 0.1) * 1.5
             );
             inactiveAsh.position.add(new THREE.Vector3(0.29, 7.26, 0.78));
 
             // Strong initial velocity for "burst"
             const burstSpeed = 0.01 + Math.random() * 0.01;
-            inactiveAsh.userData.velocity.set(
-                (Math.random() - 0.2) * 0.1,
-                burstSpeed,
-                (Math.random() - 0.2) * 0.1
-            );
+            // Random launch angle between 30° and 90° (in radians)
+            const launchAngle = (Math.PI / 6) + Math.random() * (Math.PI / 2 - Math.PI / 6);
+            // Random horizontal direction
+            const horizontalAngle = Math.random() * Math.PI * 2;
+            // Compute velocity components for parabolic trajectory
+            const vx = burstSpeed * Math.sin(launchAngle) * Math.cos(horizontalAngle);
+            const vz = burstSpeed * Math.sin(launchAngle) * Math.sin(horizontalAngle);
+            const vy = burstSpeed * Math.cos(launchAngle);
+            inactiveAsh.userData.velocity.set(vx, vy, vz);
 
             // Randomly select a texture for the new particle
             const randomTexture = loadedAshTextures[Math.floor(Math.random() * loadedAshTextures.length)];
@@ -96,7 +101,7 @@ function updateAsh() {
     }
 
     // Condition for ash burst in deep volcano
-    if (gasDensity > 40 && stretch > 2.5 && Math.random() < 0.2) {
+    if (gasDensity > 40 && stretch > 2.5 && Math.random() < 0.4) {
         // Find an inactive ash particle to launch
         const inactiveAsh = ashParticles.find(p => !p.userData.isActive);
         if (inactiveAsh) {
@@ -104,7 +109,7 @@ function updateAsh() {
             inactiveAsh.material.visible = true;
             inactiveAsh.userData.isActive = true;
             inactiveAsh.userData.birthTime = now;
-            inactiveAsh.userData.lifetime = 0.3 + Math.random() * 0.2; // Longer lifetime for deep volcano ash
+            inactiveAsh.userData.lifetime = 0.4 + Math.random() * 0.2; // Longer lifetime for deep volcano ash
             inactiveAsh.userData.isDeepVolcano = true; // Flag for slower fall
             inactiveAsh.position.set(
                 (Math.random() - 0.5) * 1.5,
@@ -115,11 +120,15 @@ function updateAsh() {
 
             // Strong initial velocity for "burst"
             const burstSpeed = 0.01 + Math.random() * 0.01;
-            inactiveAsh.userData.velocity.set(
-                (Math.random() - 0.2) * 0.1,
-                burstSpeed,
-                (Math.random() - 0.2) * 0.1
-            );
+            // Random launch angle between 30° and 90° (in radians)
+            const launchAngle = (Math.PI / 6) + Math.random() * (Math.PI / 2 - Math.PI / 6);
+            // Random horizontal direction
+            const horizontalAngle = Math.random() * Math.PI * 2;
+            // Compute velocity components for parabolic trajectory
+            const vx = burstSpeed * Math.sin(launchAngle) * Math.cos(horizontalAngle);
+            const vz = burstSpeed * Math.sin(launchAngle) * Math.sin(horizontalAngle);
+            const vy = burstSpeed * Math.cos(launchAngle);
+            inactiveAsh.userData.velocity.set(vx, vy, vz);
 
             // Randomly select a texture for the new particle
             const randomTexture = loadedAshTextures[Math.floor(Math.random() * loadedAshTextures.length)];
