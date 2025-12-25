@@ -43,6 +43,7 @@ const gasDensitySlider = document.getElementById('gas-density-slider');
 if (gasDensitySlider) {
     gasDensitySlider.addEventListener('input', (event) => {
         window.gasDensity = parseInt(event.target.value);
+        if (window.updateTriggerButtonText) window.updateTriggerButtonText();
     });
 }
 
@@ -51,6 +52,7 @@ if (volcanoStretchSlider) {
     volcanoStretchSlider.addEventListener('input', (event) => {
         window.volcanoStretch = parseFloat(event.target.value);
         stretchVolcano();
+        if (window.updateTriggerButtonText) window.updateTriggerButtonText();
     });
 }
 
@@ -58,6 +60,7 @@ const temperatureSlider = document.getElementById('temperature-slider');
 if (temperatureSlider) {
     temperatureSlider.addEventListener('input', (event) => {
         window.temperature = parseFloat(event.target.value);
+        if (window.updateTriggerButtonText) window.updateTriggerButtonText();
     });
 }
 

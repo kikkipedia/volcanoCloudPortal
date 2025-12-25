@@ -134,16 +134,22 @@ window.shakeCamera = function() {
 // Placeholder functions for different eruption types
 function type1_eruption() {
     console.log('Type 1 Eruption: High temperature, low gas, shallow depth');
+    const btn = document.getElementById('trigger-eruption-btn');
+    if (btn) btn.textContent = 'Trigger Eruption Type 1';
     window.shakeCamera();
 }
 
 function type2_eruption() {
     console.log('Type 2 Eruption: Medium to high temperature, medium gas, medium depth');
+    const btn = document.getElementById('trigger-eruption-btn');
+    if (btn) btn.textContent = 'Trigger Eruption Type 2';
     window.shakeCamera();
 }
 
 function type3_eruption() {
     console.log('Type 3 Eruption: Low to medium temperature, high gas, deep depth');
+    const btn = document.getElementById('trigger-eruption-btn');
+    if (btn) btn.textContent = 'Trigger Eruption Type 3';
     window.shakeCamera();
 }
 
@@ -153,16 +159,16 @@ function determineEruptionType() {
     const gas = window.gasDensity;
     const depth = window.volcanoStretch;
 
-    // Define ranges
-    const tempLow = 0, tempMed = 6.67, tempHigh = 13.34;
-    const gasLow = 10, gasMed = 23.34, gasHigh = 36.68;
-    const depthShallow = 1.0, depthMed = 1.67, depthDeep = 2.34;
+    // Define ranges based on slider min/max divided into fifths
+    const tempLow = 2, tempMedLow = 5, tempMedium = 11, tempMedHigh = 15, tempHigh = 18;
+    const gasLow = 15, gasMedLow = 20, gasMedium = 31, gasMedHigh = 40, gasHigh = 545;
+    const depthLow = 1.3, depthMedLow = 1.5, depthMedium = 2.1, depthMedHigh = 2.5, depthHigh = 2.8;
 
-    if (temp >= tempHigh && gas <= gasMed && depth <= depthMed) {
+    if (temp >= tempHigh && gas <= gasLow && depth <= depthLow) {
         type1_eruption();
-    } else if (temp >= tempMed && gas >= gasMed && gas <= gasHigh && depth >= depthMed && depth <= depthDeep) {
+    } else if (temp >= tempMedHigh && gas >= gasMedium && depth >= depthMedium) {
         type2_eruption();
-    } else if (temp <= tempMed && gas >= gasHigh && depth >= depthDeep) {
+    } else if (temp <= tempMedium && gas >= gasHigh && depth >= depthHigh) {
         type3_eruption();
     } else {
         // Default or no match, still trigger shakeCamera
