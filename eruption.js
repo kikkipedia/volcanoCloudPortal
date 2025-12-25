@@ -72,9 +72,18 @@ window.shakeCamera = function() {
                     });
                 }
 
-                // Gradually change fresnel color from cyan to red (only on first shake)
+                // Gradually change fresnel color based on eruption type (only on first shake)
                 if (!hasColorChanged) {
-                    const targetFresnelColor = new THREE.Color(0xff0000); // Red color
+                    let targetFresnelColor;
+                    if (window.isType1Eruption) {
+                        targetFresnelColor = new THREE.Color(0xffa500); // Orange for Type 1
+                    } else if (window.isType2Eruption) {
+                        targetFresnelColor = new THREE.Color(0xff0000); // Red for Type 2
+                    } else if (window.isType3Eruption) {
+                        targetFresnelColor = new THREE.Color(0x8b0000); // Deep red for Type 3
+                    } else {
+                        targetFresnelColor = new THREE.Color(0xff0000); // Default to red
+                    }
                     const currentFresnelColor = new THREE.Color();
                     currentFresnelColor.lerpColors(originalFresnelColor, targetFresnelColor, progress);
                     fresnelMaterials.forEach(material => {
@@ -146,6 +155,11 @@ function type1_eruption() {
     window.isType3Eruption = false;
     // Set eruption flag for smoke behavior
     window.isType1Eruption = true;
+    // Update infobox with Passive Degassing description
+    const infoboxDiv = document.getElementById('infobox');
+    if (infoboxDiv) {
+        infoboxDiv.textContent = 'Passive Degassing\n\nPassive degassing is characterized by the continuous release of volcanic gases such as water vapor (H₂O), carbon dioxide (CO₂), and sulfur dioxide (SO₂) from magma at shallow depth. The magma remains low in viscosity and gas escapes without significant fragmentation, producing a visible steam plume with little or no ash. This activity often reflects an open conduit system and relatively low internal pressure.';
+    }
     // Adjust smoke parameters for type1 eruption: temperature mid-high, gas density medium, volcano depth high
     window.temperature = 15; // mid-high temperature
     window.gasDensity = 31; // medium gas density
@@ -162,8 +176,16 @@ function type2_eruption() {
         window.scene.remove(window.volcano);
         window.volcano = null;
     }
+    // Reset other eruption flags
+    window.isType1Eruption = false;
+    window.isType3Eruption = false;
     // Set eruption flag for smoke and ash behavior
     window.isType2Eruption = true;
+    // Update infobox with Strombolian Eruption description
+    const infoboxDiv = document.getElementById('infobox');
+    if (infoboxDiv) {
+        infoboxDiv.textContent = 'Strombolian Eruption\n\nStrombolian eruptions result from the periodic ascent and bursting of large gas bubbles (gas slugs) within basaltic to andesitic magma. When these bubbles reach the surface, they fragment the magma, ejecting incandescent lava clasts and moderate amounts of ash. The eruption style is intermittent and moderately energetic, producing discrete explosions and a sustained but relatively low eruption column.';
+    }
     // Adjust smoke parameters for type2 eruption: temperature medium-high, gas density high, volcano depth high
     window.temperature = 17; // medium-high temperature
     window.gasDensity = 45; // high gas density
@@ -180,8 +202,16 @@ function type3_eruption() {
         window.scene.remove(window.volcano);
         window.volcano = null;
     }
+    // Reset other eruption flags
+    window.isType1Eruption = false;
+    window.isType2Eruption = false;
     // Set eruption flag for smoke and ash behavior
     window.isType3Eruption = true;
+    // Update infobox with Vulcanian Eruption description
+    const infoboxDiv = document.getElementById('infobox');
+    if (infoboxDiv) {
+        infoboxDiv.textContent = 'Vulcanian Eruption\n\nVulcanian eruptions are short-lived but highly explosive events driven by the sudden release of overpressurized gas beneath a temporarily sealed volcanic conduit. The magma is more viscous, inhibiting gas escape until pressure exceeds the strength of the overlying material. This leads to violent fragmentation, generating dense ash clouds, high eruption columns, and ballistic ejecta, posing significant hazards near the volcano.';
+    }
     // Switch back to default smoke textures
     window.currentSmokeTextures = loadedTextures;
     // Adjust smoke parameters for type3 eruption: temperature medium, gas density high, volcano depth low-medium

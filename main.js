@@ -99,7 +99,7 @@ function createFresnelMaterial(fresnelColor = new THREE.Color(0x00ffff), fresnel
             
             // Create the edge glow effect
             vec3 finalColor = mix(vec3(0.0), fresnelColor, fresnel);
-            float finalAlpha = fresnel;
+            float finalAlpha = 1.0;
             
             gl_FragColor = vec4(finalColor, finalAlpha);
         }
@@ -113,7 +113,7 @@ function createFresnelMaterial(fresnelColor = new THREE.Color(0x00ffff), fresnel
         },
         vertexShader: vertexShader,
         fragmentShader: fragmentShader,
-        transparent: true,
+        transparent: false,
         side: THREE.DoubleSide,
         blending: THREE.AdditiveBlending,
         depthWrite: false

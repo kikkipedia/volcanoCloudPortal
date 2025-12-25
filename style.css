@@ -38,6 +38,8 @@ body {
     padding: 10px;
     font-family: Arial, sans-serif;
     font-size: 16px;
+    max-width: 300px;
+    word-wrap: break-word;
 }
 
 #button-container {
@@ -87,9 +89,8 @@ body {
 
 #parameters-popup {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    top: 10px;
+    right: 10px;
     width: 300px;
     background-color: rgba(0, 0, 0, 0.8);
     color: white;

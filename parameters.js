@@ -8,14 +8,25 @@ window.smokeLifetime = 2.5; // Default smoke lifetime
 const parametersButton = document.getElementById('parameters-btn');
 const popup = document.getElementById('parameters-popup');
 
+console.log('Parameters button:', parametersButton);
+console.log('Popup:', popup);
+
 if (parametersButton && popup) {
+    console.log('Adding event listener');
     parametersButton.addEventListener('click', () => {
+        console.log('Button clicked, popup display:', popup.style.display);
         if (popup.style.display === 'none') {
             popup.style.display = 'block';
+            parametersButton.textContent = 'Close Parameters';
+            console.log('Opened popup, text set to Close Parameters');
         } else {
             popup.style.display = 'none';
+            parametersButton.textContent = 'Parameters';
+            console.log('Closed popup, text set to Parameters');
         }
     });
+} else {
+    console.log('Button or popup not found');
 }
 
 const smokeSpeedSlider = document.getElementById('smoke-speed-slider');
