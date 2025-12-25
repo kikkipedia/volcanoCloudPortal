@@ -153,26 +153,51 @@ function type3_eruption() {
     window.shakeCamera();
 }
 
-// Function to determine eruption type based on parameters
-function determineEruptionType() {
+// Function to get eruption type based on parameters
+function getEruptionType() {
     const temp = window.temperature;
     const gas = window.gasDensity;
     const depth = window.volcanoStretch;
 
     // Define ranges based on slider min/max divided into fifths
     const tempLow = 2, tempMedLow = 5, tempMedium = 11, tempMedHigh = 15, tempHigh = 18;
-    const gasLow = 15, gasMedLow = 20, gasMedium = 31, gasMedHigh = 40, gasHigh = 545;
+    const gasLow = 15, gasMedLow = 20, gasMedium = 31, gasMedHigh = 40, gasHigh = 45;
     const depthLow = 1.3, depthMedLow = 1.5, depthMedium = 2.1, depthMedHigh = 2.5, depthHigh = 2.8;
 
     if (temp >= tempHigh && gas <= gasLow && depth <= depthLow) {
-        type1_eruption();
-    } else if (temp >= tempMedHigh && gas >= gasMedium && depth >= depthMedium) {
-        type2_eruption();
+        return 'Type 1';
+    } else if (temp >= tempMedium && gas >= gasMedium && gas <= gasMedHigh && depth >= depthMedium && depth <= depthMedHigh) {
+        return 'Type 2';
     } else if (temp <= tempMedium && gas >= gasHigh && depth >= depthHigh) {
+        return 'Type 3';
+    } else {
+        return 'No Eruption';
+    }
+}
+
+// Function to update the trigger button text based on current parameters
+window.updateTriggerButtonText = function() {
+    const type = getEruptionType();
+    const btn = document.getElementById('trigger-eruption-btn');
+    if (btn) {
+        btn.textContent = `Trigger Eruption ${type}`;
+    }
+};
+
+// Function to determine eruption type based on parameters
+function determineEruptionType() {
+    console.log('determineEruptionType called');
+    const type = getEruptionType();
+
+    if (type === 'Type 1') {
+        type1_eruption();
+    } else if (type === 'Type 2') {
+        type2_eruption();
+    } else if (type === 'Type 3') {
         type3_eruption();
     } else {
         // Default or no match, still trigger shakeCamera
-        console.log('Default Eruption');
+        console.log('No Eruption');
         window.shakeCamera();
     }
 }
