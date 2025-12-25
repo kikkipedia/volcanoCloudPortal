@@ -1,6 +1,7 @@
-# TODO: Implement Type 3 Eruption Adjustments
+# TODO: Fix Texture Loading Issue
 
-## Tasks
-- [x] Update `type3_eruption()` in `eruption.js` to set smoke parameters: temperature=11 (medium), gasDensity=45 (high), volcanoStretch=1.8 (low-medium), and set `window.isType3Eruption = true`
-- [x] Increase ash particle pool in `ash.js` from 5 to 50 particles
-- [x] Add new condition in `updateAsh()` for type 3 eruptions: 10% chance per frame to create ash particles with longer lifetimes (1.0-1.5 seconds)
+- [x] Modify createSmokeParticles() in smoke.js to preload both default and white smoke textures at startup, storing white ones in window.whiteSmokeTextures.
+- [x] In updateSmoke(), set window.currentSmokeTextures based on window.isType1Eruption flag: use window.whiteSmokeTextures if true, else loadedTextures.
+- [x] Remove loadWhiteSmokeTextures() call from type1_eruption() in eruption.js.
+- [x] Ensure window.whiteSmokeTextures is initialized.
+- [x] Remove async texture switching from loadWhiteSmokeTextures() since textures are preloaded.

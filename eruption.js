@@ -141,6 +141,9 @@ function type1_eruption() {
         window.scene.remove(window.volcano);
         window.volcano = null;
     }
+    // Reset other eruption flags
+    window.isType2Eruption = false;
+    window.isType3Eruption = false;
     // Set eruption flag for smoke behavior
     window.isType1Eruption = true;
     // Adjust smoke parameters for type1 eruption: temperature mid-high, gas density medium, volcano depth high
@@ -179,6 +182,8 @@ function type3_eruption() {
     }
     // Set eruption flag for smoke and ash behavior
     window.isType3Eruption = true;
+    // Switch back to default smoke textures
+    window.currentSmokeTextures = loadedTextures;
     // Adjust smoke parameters for type3 eruption: temperature medium, gas density high, volcano depth low-medium
     window.temperature = 11; // medium temperature
     window.gasDensity = 45; // high gas density

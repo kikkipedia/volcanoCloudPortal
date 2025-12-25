@@ -3,6 +3,11 @@ const smokeParticles = [];
 const loadedTextures = [];
 const smokeGeometry = new THREE.PlaneGeometry(10, 10);
 
+// Global variable to track current active texture set
+window.currentSmokeTextures = loadedTextures;
+window.loadedTextures = loadedTextures;
+let previousSmokeTextures = loadedTextures;
+
 function lerp(a, b, alpha) {
     return a + alpha * (b - a);
 }
@@ -15,34 +20,57 @@ function createSmokeParticles() {
 
     const textureLoader = new THREE.TextureLoader();
 
-    // Define the three texture paths
-    const texturePaths = ['volcano_smoke1.png', 'smoke_var2.png', 'smoke_var3.png'];
+    // Define the default and white texture paths
+    const defaultTexturePaths = ['volcano_smoke1.png', 'smoke_var2.png', 'smoke_var3.png'];
+    const whiteTexturePaths = ['white_smoke1.png', 'white_smoke2.png', 'white_smoke3.png'];
 
-    // Load all textures asynchronously
-    const loadPromises = texturePaths.map(path => {
+    // Load all default textures asynchronously
+    const defaultLoadPromises = defaultTexturePaths.map(path => {
         return new Promise((resolve, reject) => {
             textureLoader.load(
                 path,
                 (texture) => {
-                    console.log(`Smoke texture loaded successfully: ${path}`);
+                    console.log(`Default smoke texture loaded successfully: ${path}`);
                     resolve(texture);
                 },
                 undefined,
                 (error) => {
-                    console.error('Error loading smoke texture:', error);
+                    console.error('Error loading default smoke texture:', error);
                     reject(error);
                 }
             );
         });
     });
 
-    Promise.all(loadPromises).then(textures => {
-        loadedTextures.push(...textures);
-        console.log('All smoke textures loaded successfully');
+    // Load all white textures asynchronously
+    const whiteLoadPromises = whiteTexturePaths.map(path => {
+        return new Promise((resolve, reject) => {
+            textureLoader.load(
+                path,
+                (texture) => {
+                    console.log(`White smoke texture loaded successfully: ${path}`);
+                    resolve(texture);
+                },
+                undefined,
+                (error) => {
+                    console.error('Error loading white smoke texture:', error);
+                    reject(error);
+                }
+            );
+        });
+    });
 
-    const numParticles = 150; // Create a fixed pool of particles
+    // Load both sets of textures
+    Promise.all([...defaultLoadPromises, ...whiteLoadPromises]).then(textures => {
+        const numDefaultTextures = defaultTexturePaths.length;
+        loadedTextures.push(...textures.slice(0, numDefaultTextures));
+        window.whiteSmokeTextures = textures.slice(numDefaultTextures);
+        console.log('All smoke textures loaded successfully');
+        console.log('window.whiteSmokeTextures set:', window.whiteSmokeTextures);
+
+        const numParticles = 150; // Create a fixed pool of particles
         for (let i = 0; i < numParticles; i++) {
-            // Randomly select one of the loaded textures
+            // Randomly select one of the loaded default textures initially
             const randomTexture = loadedTextures[Math.floor(Math.random() * loadedTextures.length)];
 
             const smokeMaterial = new THREE.MeshBasicMaterial({
@@ -55,7 +83,7 @@ function createSmokeParticles() {
             particle.position.set(
                 (Math.random() - 0.5) * 1.5,
                 0,
-                (Math.random() - 0.5) * 1.5 
+                (Math.random() - 0.5) * 1.5
             );
             particle.position.add(new THREE.Vector3(0.29, 7.26, 0.78));
             particle.rotation.x = -Math.PI / 2;
@@ -76,10 +104,63 @@ function createSmokeParticles() {
     });
 }
 
+// Function to load white smoke textures for type 1 eruption
+function loadWhiteSmokeTextures() {
+    if (window.whiteSmokeTextures) {
+        // Already loaded, just switch
+        window.currentSmokeTextures = window.whiteSmokeTextures;
+        return Promise.resolve();
+    }
+
+    const textureLoader = new THREE.TextureLoader();
+    const whiteTexturePaths = ['white_smoke1.png', 'white_smoke2.png', 'white_smoke3.png'];
+
+    const loadPromises = whiteTexturePaths.map(path => {
+        return new Promise((resolve, reject) => {
+            textureLoader.load(
+                path,
+                (texture) => {
+                    console.log(`White smoke texture loaded successfully: ${path}`);
+                    resolve(texture);
+                },
+                undefined,
+                (error) => {
+                    console.error('Error loading white smoke texture:', error);
+                    reject(error);
+                }
+            );
+        });
+    });
+
+    return Promise.all(loadPromises).then(textures => {
+        window.whiteSmokeTextures = textures;
+        window.currentSmokeTextures = textures;
+        console.log('All white smoke textures loaded successfully');
+    }).catch(error => {
+        console.error('Failed to load white smoke textures:', error);
+    });
+}
+
 function updateSmoke() {
     const now = Date.now();
     const speed = window.smokeSpeed || 0.01;
     const height = window.smokeHeight || 1.0;
+
+    // Set current smoke textures based on eruption type
+    window.currentSmokeTextures = window.isType1Eruption && window.whiteSmokeTextures ? window.whiteSmokeTextures : loadedTextures;
+    console.log('Current smoke textures set to:', window.currentSmokeTextures === window.whiteSmokeTextures ? 'white' : 'default');
+
+    // If texture set changed, update all existing particles immediately
+    if (window.currentSmokeTextures !== previousSmokeTextures) {
+        smokeParticles.forEach(particle => {
+            if (particle.visible) {
+                const randomTexture = window.currentSmokeTextures[Math.floor(Math.random() * window.currentSmokeTextures.length)];
+                particle.material.map = randomTexture;
+                particle.material.needsUpdate = true;
+            }
+        });
+        previousSmokeTextures = window.currentSmokeTextures;
+    }
 
     // Depth-based movement speed
     const stretch = window.volcanoStretch || 1.0;
@@ -162,7 +243,7 @@ function updateSmoke() {
             particle.position.add(new THREE.Vector3(0.29, 7.26, 0.78));
             particle.userData.birthTime = now - Math.random() * 500; // Stagger respawn
             particle.scale.set(0.1, 0.1, 0.1);
-            const randomTexture = loadedTextures[Math.floor(Math.random() * loadedTextures.length)];
+            const randomTexture = window.currentSmokeTextures[Math.floor(Math.random() * window.currentSmokeTextures.length)];
             particle.material.map = randomTexture;
         }
 
