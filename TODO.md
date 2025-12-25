@@ -1,1 +1,3 @@
-- [x] Update type1_eruption() in eruption.js to set infobox text to Passive Degassing description when eruption type 1 is activated.
+- [x] Add soft grey gradient to infobox in style.css
+- [x] Set eruptionTriggered flag after eruption in eruption.js
+- [x] Ensure button text changes to "Reset to Before" after eruption

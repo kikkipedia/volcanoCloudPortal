@@ -158,7 +158,11 @@ function type1_eruption() {
     // Update infobox with Passive Degassing description
     const infoboxDiv = document.getElementById('infobox');
     if (infoboxDiv) {
-        infoboxDiv.textContent = 'Passive Degassing\n\nPassive degassing is characterized by the continuous release of volcanic gases such as water vapor (H₂O), carbon dioxide (CO₂), and sulfur dioxide (SO₂) from magma at shallow depth. The magma remains low in viscosity and gas escapes without significant fragmentation, producing a visible steam plume with little or no ash. This activity often reflects an open conduit system and relatively low internal pressure.';
+        infoboxDiv.style.opacity = '0';
+        setTimeout(() => {
+            infoboxDiv.textContent = 'Passive Degassing\n\nPassive degassing is characterized by the continuous release of volcanic gases such as water vapor (H₂O), carbon dioxide (CO₂), and sulfur dioxide (SO₂) from magma at shallow depth. The magma remains low in viscosity and gas escapes without significant fragmentation, producing a visible steam plume with little or no ash. This activity often reflects an open conduit system and relatively low internal pressure.';
+            infoboxDiv.style.opacity = '1';
+        }, 250);
     }
     // Adjust smoke parameters for type1 eruption: temperature mid-high, gas density medium, volcano depth high
     window.temperature = 15; // mid-high temperature
@@ -184,7 +188,11 @@ function type2_eruption() {
     // Update infobox with Strombolian Eruption description
     const infoboxDiv = document.getElementById('infobox');
     if (infoboxDiv) {
-        infoboxDiv.textContent = 'Strombolian Eruption\n\nStrombolian eruptions result from the periodic ascent and bursting of large gas bubbles (gas slugs) within basaltic to andesitic magma. When these bubbles reach the surface, they fragment the magma, ejecting incandescent lava clasts and moderate amounts of ash. The eruption style is intermittent and moderately energetic, producing discrete explosions and a sustained but relatively low eruption column.';
+        infoboxDiv.style.opacity = '0';
+        setTimeout(() => {
+            infoboxDiv.textContent = 'Strombolian Eruption\n\nStrombolian eruptions result from the periodic ascent and bursting of large gas bubbles (gas slugs) within basaltic to andesitic magma. When these bubbles reach the surface, they fragment the magma, ejecting incandescent lava clasts and moderate amounts of ash. The eruption style is intermittent and moderately energetic, producing discrete explosions and a sustained but relatively low eruption column.';
+            infoboxDiv.style.opacity = '1';
+        }, 250);
     }
     // Adjust smoke parameters for type2 eruption: temperature medium-high, gas density high, volcano depth high
     window.temperature = 17; // medium-high temperature
@@ -210,7 +218,11 @@ function type3_eruption() {
     // Update infobox with Vulcanian Eruption description
     const infoboxDiv = document.getElementById('infobox');
     if (infoboxDiv) {
-        infoboxDiv.textContent = 'Vulcanian Eruption\n\nVulcanian eruptions are short-lived but highly explosive events driven by the sudden release of overpressurized gas beneath a temporarily sealed volcanic conduit. The magma is more viscous, inhibiting gas escape until pressure exceeds the strength of the overlying material. This leads to violent fragmentation, generating dense ash clouds, high eruption columns, and ballistic ejecta, posing significant hazards near the volcano.';
+        infoboxDiv.style.opacity = '0';
+        setTimeout(() => {
+            infoboxDiv.textContent = 'Vulcanian Eruption\n\nVulcanian eruptions are short-lived but highly explosive events driven by the sudden release of overpressurized gas beneath a temporarily sealed volcanic conduit. The magma is more viscous, inhibiting gas escape until pressure exceeds the strength of the overlying material. This leads to violent fragmentation, generating dense ash clouds, high eruption columns, and ballistic ejecta, posing significant hazards near the volcano.';
+            infoboxDiv.style.opacity = '1';
+        }, 250);
     }
     // Switch back to default smoke textures
     window.currentSmokeTextures = loadedTextures;
@@ -261,6 +273,94 @@ window.updateTriggerButtonText = function() {
     }
 };
 
+// Function to reset the scene to before eruption
+function resetToBeforeEruption() {
+    console.log('Resetting to before eruption');
+    // Reset eruption flags
+    window.isType1Eruption = false;
+    window.isType2Eruption = false;
+    window.isType3Eruption = false;
+    // Reset parameters to defaults
+    window.temperature = 10;
+    window.gasDensity = 30;
+    window.volcanoStretch = 2.0;
+    // Reset smoke textures
+    window.currentSmokeTextures = loadedTextures;
+    // Reset camera position
+    window.camera.position.set(15, 14, 25);
+    window.camera.lookAt(0, 0, 0);
+    // Reset terrain texture and opacity
+    if (window.terrain) {
+        const textureLoader = new THREE.TextureLoader();
+        textureLoader.load('mayon_FULL3.glb', (texture) => {
+            texture.encoding = THREE.sRGBEncoding;
+            window.terrain.traverse((child) => {
+                if (child.isMesh && child.material) {
+                    child.material.map = texture;
+                    child.material.opacity = 1.0;
+                    child.material.needsUpdate = true;
+                }
+            });
+        });
+        // Reset Fresnel colors
+        window.terrain.traverse((child) => {
+            if (child.userData.fresnelOutline && child.material.uniforms && child.material.uniforms.fresnelColor) {
+                child.material.uniforms.fresnelColor.value.setHex(0x00ffff);
+            }
+        });
+    }
+    // Reload volcano slice model if it was removed
+    if (!window.volcano) {
+        const loader = new THREE.GLTFLoader();
+        loader.load('mayon_slice_FULL3.glb', function (gltf) {
+            window.volcano = gltf.scene;
+            window.volcano.position.set(0, 0, 0);
+            window.volcano.scale.set(0.25, 0.25, 0.25);
+            window.volcano.rotation.set(0, -135, 0);
+            // Apply Fresnel effect
+            window.volcano.traverse((child) => {
+                if (child.isMesh) {
+                    child.userData.fresnelProcessed = true;
+                    if (geometry.isBufferGeometry && geometry.attributes.position) {
+                        geometry.userData.originalVertices = geometry.attributes.position.array.slice();
+                    }
+                }
+            });
+            window.volcano.traverse((child) => {
+                if (child.isMesh && child.userData.fresnelProcessed && !child.userData.fresnelAdded) {
+                    const fresnelMaterial = createFresnelMaterial(new THREE.Color(0x00ffff), 2.5, 1.2);
+                    const fresnelMesh = child.clone();
+                    fresnelMesh.material = fresnelMaterial;
+                    fresnelMesh.scale.multiplyScalar(1.02);
+                    fresnelMesh.userData.fresnelOutline = true;
+                    child.parent.add(fresnelMesh);
+                    child.userData.fresnelAdded = true;
+                }
+            });
+            window.scene.add(window.volcano);
+        });
+    }
+    // Reset infobox
+    const infoboxDiv = document.getElementById('infobox');
+    if (infoboxDiv) {
+        infoboxDiv.style.opacity = '0';
+        setTimeout(() => {
+            infoboxDiv.textContent = 'Infobox';
+            infoboxDiv.style.opacity = '1';
+        }, 250);
+    }
+    // Update button text back to trigger mode
+    const btn = document.getElementById('trigger-eruption-btn');
+    if (btn) {
+        btn.textContent = 'Trigger Eruption';
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+    }
+    // Update trigger button text based on current parameters
+    window.updateTriggerButtonText();
+}
+
 // Function to determine eruption type based on parameters
 function determineEruptionType() {
     console.log('determineEruptionType called');
@@ -268,10 +368,25 @@ function determineEruptionType() {
 
     if (type === 'Type 1') {
         type1_eruption();
+        // After eruption, change button to reset mode
+        const btn = document.getElementById('trigger-eruption-btn');
+        if (btn) {
+            btn.textContent = 'Reset to Before';
+        }
     } else if (type === 'Type 2') {
         type2_eruption();
+        // After eruption, change button to reset mode
+        const btn = document.getElementById('trigger-eruption-btn');
+        if (btn) {
+            btn.textContent = 'Reset to Before';
+        }
     } else if (type === 'Type 3') {
         type3_eruption();
+        // After eruption, change button to reset mode
+        const btn = document.getElementById('trigger-eruption-btn');
+        if (btn) {
+            btn.textContent = 'Reset to Before';
+        }
     } else {
         // No eruption possible
         console.log('No Eruption');
@@ -283,7 +398,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const triggerEruptionBtn = document.getElementById('trigger-eruption-btn');
     if (triggerEruptionBtn) {
         triggerEruptionBtn.addEventListener('click', () => {
-            determineEruptionType();
+            if (window.eruptionTriggered) {
+                resetToBeforeEruption();
+                window.eruptionTriggered = false;
+            } else {
+                determineEruptionType();
+            }
         });
     }
     // Initialize button text on page load
