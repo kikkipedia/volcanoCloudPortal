@@ -141,11 +141,17 @@ function type1_eruption() {
         window.scene.remove(window.volcano);
         window.volcano = null;
     }
+    // Set eruption flag for smoke behavior
+    window.isType1Eruption = true;
+    // Adjust smoke parameters for type1 eruption: temperature mid-high, gas density medium, volcano depth high
+    window.temperature = 15; // mid-high temperature
+    window.gasDensity = 31; // medium gas density
+    window.volcanoStretch = 2.8; // high depth
     window.shakeCamera();
 }
 
 function type2_eruption() {
-    console.log('Type 2 Eruption: Medium to high temperature, medium gas, medium depth');
+    console.log('Type 2 Eruption: Medium to high temperature, high gas, high depth');
     const btn = document.getElementById('trigger-eruption-btn');
     if (btn) btn.textContent = 'Trigger Eruption Type 2';
     // Unload the slice 3D model
@@ -153,11 +159,17 @@ function type2_eruption() {
         window.scene.remove(window.volcano);
         window.volcano = null;
     }
+    // Set eruption flag for smoke and ash behavior
+    window.isType2Eruption = true;
+    // Adjust smoke parameters for type2 eruption: temperature medium-high, gas density high, volcano depth high
+    window.temperature = 17; // medium-high temperature
+    window.gasDensity = 45; // high gas density
+    window.volcanoStretch = 2.8; // high depth
     window.shakeCamera();
 }
 
 function type3_eruption() {
-    console.log('Type 3 Eruption: Low to medium temperature, high gas, deep depth');
+    console.log('Type 3 Eruption: Medium temperature, high gas density, low-medium depth');
     const btn = document.getElementById('trigger-eruption-btn');
     if (btn) btn.textContent = 'Trigger Eruption Type 3';
     // Unload the slice 3D model
@@ -165,6 +177,12 @@ function type3_eruption() {
         window.scene.remove(window.volcano);
         window.volcano = null;
     }
+    // Set eruption flag for smoke and ash behavior
+    window.isType3Eruption = true;
+    // Adjust smoke parameters for type3 eruption: temperature medium, gas density high, volcano depth low-medium
+    window.temperature = 11; // medium temperature
+    window.gasDensity = 45; // high gas density
+    window.volcanoStretch = 1.8; // low-medium depth
     window.shakeCamera();
 }
 

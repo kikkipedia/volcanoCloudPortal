@@ -125,10 +125,15 @@ function updateSmoke() {
     const opacityMultiplier = minOpacity + (maxOpacity - minOpacity) * gasAmountNormalized;
     const scaleMultiplier = 0.5 + 1.5 * gasAmountNormalized;
 
-    // --- Color adjustment based on Gas Density ---
-    const baseColor = new THREE.Color(0x808080); // Greyish
-    const brightColor = new THREE.Color(0xffffff); // White
-    const finalColor = new THREE.Color().lerpColors(baseColor, brightColor, 1.0 - gasAmountNormalized);
+    // --- Color adjustment based on Gas Density or Eruption ---
+    let finalColor;
+    if (window.isType1Eruption) {
+        finalColor = new THREE.Color(0xffffff); // White
+    } else {
+        const baseColor = new THREE.Color(0x808080); // Greyish
+        const brightColor = new THREE.Color(0xffffff); // White
+        finalColor = new THREE.Color().lerpColors(baseColor, brightColor, 1.0 - gasAmountNormalized);
+    }
 
     // --- Stagger birth of newly activated particles to prevent bursts ---
     if (numActiveParticles > prevNumActiveParticles) {
@@ -175,6 +180,9 @@ function updateSmoke() {
         }
         
         let totalUpwardForce = (Math.random() * effectiveVerticalForce + effectiveVerticalForce / 2) + (temperature * 0.001 * effectiveBuoyancyMultiplier);
+        if (window.isType1Eruption) {
+            totalUpwardForce *= 1.5; // Increase upward force for gentler drift
+        }
 
         // --- Burst logic for shallow volcano ---
         if (stretch < 0.9) { // Shallow volcano condition
