@@ -1,5 +1,3 @@
-# TODO: Add Second Ash Spawning Dependency for Deep Volcanoes
-
-- [x] Add a new condition in updateAsh() function for ash spawning when gasDensity > 40 and stretch > 2 (deep volcano)
-- [x] Mirror the existing particle activation logic for the new condition
-- [x] Modify deep volcano ash to have longer lifetime and slower fall
+- [x] Add three placeholder functions: type1_eruption, type2_eruption, type3_eruption in eruption.js. Each should log the eruption type and call shakeCamera.
+- [x] Add determineEruptionType function that checks current parameter values (temperature, gasDensity, volcanoStretch) against the defined ranges and calls the appropriate type function.
+- [x] Update the event listener for 'trigger-eruption-btn' to call determineEruptionType instead of directly calling shakeCamera.

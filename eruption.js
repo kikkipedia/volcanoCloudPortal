@@ -131,12 +131,52 @@ window.shakeCamera = function() {
     animateShake();
 };
 
+// Placeholder functions for different eruption types
+function type1_eruption() {
+    console.log('Type 1 Eruption: High temperature, low gas, shallow depth');
+    window.shakeCamera();
+}
+
+function type2_eruption() {
+    console.log('Type 2 Eruption: Medium to high temperature, medium gas, medium depth');
+    window.shakeCamera();
+}
+
+function type3_eruption() {
+    console.log('Type 3 Eruption: Low to medium temperature, high gas, deep depth');
+    window.shakeCamera();
+}
+
+// Function to determine eruption type based on parameters
+function determineEruptionType() {
+    const temp = window.temperature;
+    const gas = window.gasDensity;
+    const depth = window.volcanoStretch;
+
+    // Define ranges
+    const tempLow = 0, tempMed = 6.67, tempHigh = 13.34;
+    const gasLow = 10, gasMed = 23.34, gasHigh = 36.68;
+    const depthShallow = 1.0, depthMed = 1.67, depthDeep = 2.34;
+
+    if (temp >= tempHigh && gas <= gasMed && depth <= depthMed) {
+        type1_eruption();
+    } else if (temp >= tempMed && gas >= gasMed && gas <= gasHigh && depth >= depthMed && depth <= depthDeep) {
+        type2_eruption();
+    } else if (temp <= tempMed && gas >= gasHigh && depth >= depthDeep) {
+        type3_eruption();
+    } else {
+        // Default or no match, still trigger shakeCamera
+        console.log('Default Eruption');
+        window.shakeCamera();
+    }
+}
+
 // Add event listener for the trigger eruption button
 document.addEventListener('DOMContentLoaded', () => {
     const triggerEruptionBtn = document.getElementById('trigger-eruption-btn');
     if (triggerEruptionBtn) {
         triggerEruptionBtn.addEventListener('click', () => {
-            window.shakeCamera();
+            determineEruptionType();
         });
     }
 });
