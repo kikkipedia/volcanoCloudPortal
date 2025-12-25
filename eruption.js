@@ -136,6 +136,11 @@ function type1_eruption() {
     console.log('Type 1 Eruption: High temperature, low gas, shallow depth');
     const btn = document.getElementById('trigger-eruption-btn');
     if (btn) btn.textContent = 'Trigger Eruption Type 1';
+    // Unload the slice 3D model
+    if (window.volcano) {
+        window.scene.remove(window.volcano);
+        window.volcano = null;
+    }
     window.shakeCamera();
 }
 
@@ -143,6 +148,11 @@ function type2_eruption() {
     console.log('Type 2 Eruption: Medium to high temperature, medium gas, medium depth');
     const btn = document.getElementById('trigger-eruption-btn');
     if (btn) btn.textContent = 'Trigger Eruption Type 2';
+    // Unload the slice 3D model
+    if (window.volcano) {
+        window.scene.remove(window.volcano);
+        window.volcano = null;
+    }
     window.shakeCamera();
 }
 
@@ -150,6 +160,11 @@ function type3_eruption() {
     console.log('Type 3 Eruption: Low to medium temperature, high gas, deep depth');
     const btn = document.getElementById('trigger-eruption-btn');
     if (btn) btn.textContent = 'Trigger Eruption Type 3';
+    // Unload the slice 3D model
+    if (window.volcano) {
+        window.scene.remove(window.volcano);
+        window.volcano = null;
+    }
     window.shakeCamera();
 }
 
@@ -181,6 +196,15 @@ window.updateTriggerButtonText = function() {
     const btn = document.getElementById('trigger-eruption-btn');
     if (btn) {
         btn.textContent = `Trigger Eruption ${type}`;
+        if (type === 'No Eruption') {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+        } else {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+        }
     }
 };
 
@@ -196,9 +220,8 @@ function determineEruptionType() {
     } else if (type === 'Type 3') {
         type3_eruption();
     } else {
-        // Default or no match, still trigger shakeCamera
+        // No eruption possible
         console.log('No Eruption');
-        window.shakeCamera();
     }
 }
 
@@ -210,4 +233,6 @@ document.addEventListener('DOMContentLoaded', () => {
             determineEruptionType();
         });
     }
+    // Initialize button text on page load
+    window.updateTriggerButtonText();
 });
