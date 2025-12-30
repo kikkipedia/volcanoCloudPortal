@@ -317,26 +317,23 @@ function resetToBeforeEruption() {
             window.volcano.position.set(0, 0, 0);
             window.volcano.scale.set(0.25, 0.25, 0.25);
             window.volcano.rotation.set(0, -135, 0);
-            // Apply Fresnel effect
+            // Enable transparency for fade animation
             window.volcano.traverse((child) => {
                 if (child.isMesh) {
+                    child.material.transparent = true;
+                    child.material.opacity = 1.0;
+
+                    // Mark this mesh as processed to avoid infinite recursion
                     child.userData.fresnelProcessed = true;
+
+                    // Store original vertices for stretching
+                    const geometry = child.geometry;
                     if (geometry.isBufferGeometry && geometry.attributes.position) {
                         geometry.userData.originalVertices = geometry.attributes.position.array.slice();
                     }
                 }
             });
-            window.volcano.traverse((child) => {
-                if (child.isMesh && child.userData.fresnelProcessed && !child.userData.fresnelAdded) {
-                    const fresnelMaterial = createFresnelMaterial(new THREE.Color(0x00ffff), 2.5, 1.2);
-                    const fresnelMesh = child.clone();
-                    fresnelMesh.material = fresnelMaterial;
-                    fresnelMesh.scale.multiplyScalar(1.02);
-                    fresnelMesh.userData.fresnelOutline = true;
-                    child.parent.add(fresnelMesh);
-                    child.userData.fresnelAdded = true;
-                }
-            });
+
             window.scene.add(window.volcano);
         });
     }

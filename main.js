@@ -61,64 +61,81 @@ createSmokeParticles();
 createAshParticles();
 
 // Custom Fresnel shader material for edge glow effect
-function createFresnelMaterial(fresnelColor = new THREE.Color(0x00ffff), fresnelPower = 2.0, fresnelIntensity = 1.0) {
+function createFresnelMaterial(fresnelColor = new THREE.Color(0x00ffff), fresnelPower = 2.0, fresnelIntensity = 1.0, originalTexture = null) {
     const vertexShader = `
         varying vec3 vWorldPosition;
         varying vec3 vNormal;
         varying vec3 vViewPosition;
-        
+        varying vec2 vUv;
+
         void main() {
             vec4 worldPosition = modelMatrix * vec4(position, 1.0);
             vWorldPosition = worldPosition.xyz;
-            
+
             vNormal = normalize(normalMatrix * normal);
-            
+
             vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
             vViewPosition = -mvPosition.xyz;
-            
+
+            vUv = vec2(1.0 - uv.x, 1.0 - uv.y);
+
             gl_Position = projectionMatrix * mvPosition;
         }
     `;
-    
+
     const fragmentShader = `
         uniform vec3 fresnelColor;
         uniform float fresnelPower;
         uniform float fresnelIntensity;
+        uniform sampler2D originalTexture;
         varying vec3 vWorldPosition;
         varying vec3 vNormal;
         varying vec3 vViewPosition;
-        
+        varying vec2 vUv;
+
         void main() {
+            // Sample original texture
+            vec3 baseColor = texture2D(originalTexture, vUv).rgb;
+
+            // Calculate distance from camera to fragment
+            float distance = length(vWorldPosition - cameraPosition);
+
+            // Modulate Fresnel intensity based on distance (stronger at distance, weaker close up)
+            float distanceFactor = clamp(distance / 50.0, 0.1, 1.0); // Adjust 50.0 for desired range
+
             // Calculate Fresnel effect based on view direction and surface normal
             vec3 viewDirection = normalize(vViewPosition);
             vec3 normal = normalize(vNormal);
-            
+
             // Fresnel factor: higher at grazing angles (edges)
             float fresnel = 1.0 - max(0.0, dot(normal, viewDirection));
-            fresnel = pow(fresnel, fresnelPower) * fresnelIntensity;
-            
-            // Create the edge glow effect
-            vec3 finalColor = mix(vec3(0.0), fresnelColor, fresnel);
-            float finalAlpha = 1.0;
-            
-            gl_FragColor = vec4(finalColor, finalAlpha);
+            fresnel = pow(fresnel, fresnelPower) * fresnelIntensity * distanceFactor;
+
+            // Blend base color with Fresnel effect
+            vec3 finalColor = mix(baseColor, fresnelColor, fresnel * 0.3); // Subtle blend
+
+            gl_FragColor = vec4(finalColor, 1.0);
         }
     `;
-    
+
+    const uniforms = {
+        fresnelColor: { value: fresnelColor },
+        fresnelPower: { value: fresnelPower },
+        fresnelIntensity: { value: fresnelIntensity },
+        originalTexture: { value: originalTexture },
+        cameraPosition: { value: new THREE.Vector3() }
+    };
+
     const shaderMaterial = new THREE.ShaderMaterial({
-        uniforms: {
-            fresnelColor: { value: fresnelColor },
-            fresnelPower: { value: fresnelPower },
-            fresnelIntensity: { value: fresnelIntensity }
-        },
+        uniforms: uniforms,
         vertexShader: vertexShader,
         fragmentShader: fragmentShader,
         transparent: false,
         side: THREE.DoubleSide,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
+        blending: THREE.NormalBlending,
+        depthWrite: true
     });
-    
+
     return shaderMaterial;
 }
 
@@ -236,21 +253,19 @@ loader.load('mayon_FULL3.glb', ({ scene: terrainModel }) => {
     
     terrainModel.traverse((child) => {
         if (child.isMesh && child.userData.fresnelProcessed && !child.userData.fresnelAdded) {
-            // Apply Fresnel effect to terrain model
+            // Apply Fresnel effect directly to the original mesh material
+            const originalMaterial = child.material;
+            const originalTexture = originalMaterial.map || null;
             const fresnelMaterial = createFresnelMaterial(
-                new THREE.Color(0x00ffff), // Green color for terrain
+                new THREE.Color(0x00ffff), // Cyan color for volcano
                 2.0, // Fresnel power
-                1.0  // Fresnel intensity
+                1.0, // Fresnel intensity
+                originalTexture
             );
-            
-            // Clone the mesh for fresnel outline
-            const fresnelMesh = child.clone();
-            fresnelMesh.material = fresnelMaterial;
-            fresnelMesh.scale.multiplyScalar(1.01); // Slightly larger for outline effect
-            fresnelMesh.userData.fresnelOutline = true; // Mark as outline to avoid processing
-            
-            // Add to parent instead of child to avoid recursion
-            child.parent.add(fresnelMesh);
+
+            // Combine original material with Fresnel effect
+            child.material = fresnelMaterial;
+            child.userData.fresnelOutline = true; // Mark as processed
             child.userData.fresnelAdded = true;
         }
     });
@@ -270,10 +285,13 @@ loader.load('mayon_slice_FULL3.glb', function (gltf) {
     window.volcano.position.set(0, 0, 0);
     window.volcano.scale.set(0.25, 0.25, 0.25); // Reverted scale back to original 0.25
     window.volcano.rotation.set(0,-135, 0);
-    
-    // Mark meshes as processed and apply Fresnel effect
+
+    // Enable transparency for fade animation
     window.volcano.traverse((child) => {
         if (child.isMesh) {
+            child.material.transparent = true;
+            child.material.opacity = 1.0;
+
             // Mark this mesh as processed to avoid infinite recursion
             child.userData.fresnelProcessed = true;
 
@@ -284,29 +302,9 @@ loader.load('mayon_slice_FULL3.glb', function (gltf) {
             }
         }
     });
-    
-    // Apply Fresnel effect separately after traversal
-    window.volcano.traverse((child) => {
-        if (child.isMesh && child.userData.fresnelProcessed && !child.userData.fresnelAdded) {
-            // Create Fresnel outline effect
-            const fresnelMaterial = createFresnelMaterial(
-                new THREE.Color(0x00ffff), // Cyan color for volcano
-                2.5, // Fresnel power
-                1.2  // Fresnel intensity
-            );
-            
-            // Clone the mesh for fresnel outline
-            const fresnelMesh = child.clone();
-            fresnelMesh.material = fresnelMaterial;
-            fresnelMesh.scale.multiplyScalar(1.02); // Slightly larger for outline effect
-            fresnelMesh.userData.fresnelOutline = true; // Mark as outline to avoid processing
-            
-            // Add to parent instead of child to avoid recursion
-            child.parent.add(fresnelMesh);
-            child.userData.fresnelAdded = true;
-        }
-    });
-    
+
+
+
     window.scene.add(window.volcano);
     console.log(window.volcano);
 }, undefined, function (error) {
@@ -328,6 +326,14 @@ function animate() {
     updateAsh();
     // Update controls
     controls.update();
+
+    // Update Fresnel camera position for dynamic distance-based effect
+    window.scene.traverse((child) => {
+        if (child.isMesh && child.material && child.material.uniforms && child.material.uniforms.cameraPosition) {
+            child.material.uniforms.cameraPosition.value.copy(window.camera.position);
+        }
+    });
+
     // Render the scene
     renderer.render(window.scene, window.camera);
 

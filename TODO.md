@@ -1,3 +1,2 @@
-- [x] Add soft grey gradient to infobox in style.css
-- [x] Set eruptionTriggered flag after eruption in eruption.js
-- [x] Ensure button text changes to "Reset to Before" after eruption
+- [x] Remove Fresnel shader application from the sliced volcano model (mayon_slice_FULL3.glb) in main.js
+- [x] Remove Fresnel shader application from the reloaded sliced volcano model in eruption.js resetToBeforeEruption function
