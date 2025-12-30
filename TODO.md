@@ -1,2 +1,4 @@
-- [x] Remove Fresnel shader application from the sliced volcano model (mayon_slice_FULL3.glb) in main.js
-- [x] Remove Fresnel shader application from the reloaded sliced volcano model in eruption.js resetToBeforeEruption function
+- [x] Update createFresnelMaterial function in main.js to set transparent: true and depthWrite: false
+- [x] Modify the fragment shader in createFresnelMaterial to calculate cameraDistance = length(cameraPosition) and set alpha = clamp(cameraDistance / 50.0, 0.1, 1.0), then use vec4(finalColor, alpha) for gl_FragColor
+- [x] Ensure fresnel material is only applied to the full model (terrain), not the volcano slice
+- [x] Test the changes to verify transparency increases as camera gets closer to the model
