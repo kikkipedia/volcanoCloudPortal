@@ -1,3 +1,5 @@
+window.isInsideView = false;
+
 const redCubeGeometry = new THREE.BoxGeometry(1, 1, 1);
 const redCubeMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
 const redCube = new THREE.Mesh(redCubeGeometry, redCubeMaterial);
@@ -22,7 +24,7 @@ function fadeVolcano(out) {
     window.controls.enabled = false;
 
     const startPosition = window.camera.position.clone();
-    const endPosition = out ? new THREE.Vector3(15, 14, 25) : new THREE.Vector3(3.63, 17.96, 37.23); // Initial position for fade out, inside for fade in
+    const endPosition = out ? new THREE.Vector3(15, 14, 25) : new THREE.Vector3(4, 2, 41); // Initial position for fade out, inside for fade in
 
     // Ensure volcano is visible and set initial opacity for fade-in
     if (!out) {
@@ -53,7 +55,11 @@ function fadeVolcano(out) {
 
         // Interpolate camera position and update its view
         window.camera.position.lerpVectors(startPosition, endPosition, easedProgress);
-        if(window.volcano) window.camera.lookAt(window.volcano.position);
+        if (out) {
+            window.camera.lookAt(0, 0, 0);
+        } else if (window.volcano) {
+            window.camera.lookAt(window.volcano.position);
+        }
 
         // Interpolate volcano opacity
         const opacity = out ? 1 - easedProgress : easedProgress;
@@ -69,14 +75,22 @@ function fadeVolcano(out) {
             // Animation complete
             console.log('Animation complete.');
             window.isFadingVolcano = false;
+            // Set controls target to appropriate position
+            if (out) {
+                window.controls.target.set(0, 0, 0);
+                window.camera.position.set(15, 14, 25);
+            } else {
+                window.controls.target.copy(window.volcano.position);
+            }
+            // Sync controls internal state with new camera position
+            window.controls.update();
+            // Update camera controls limits based on new visible model
+            updateCameraControlsLimits();
             // Restore controls to previous state
             window.controls.enabled = controlsWereEnabled;
-            // Set controls target to volcano for consistent look
-            window.controls.target.copy(window.volcano.position);
-            if (out) {
-                console.log('Fading out: setting volcano invisible.');
-                window.volcano.visible = false;
-            }
+            // Update inside view state
+            window.isInsideView = !out;
+            // Volcano remains visible at all times
         }
     }
 
@@ -225,14 +239,14 @@ function toggleAudio() {
 
 window.addEventListener('click', onMouseClick);
 document.getElementById('toggle-visibility-btn').addEventListener('click', () => {
-    console.log('Look inside Volcano button clicked. Terrain visible:', window.terrain ? window.terrain.visible : 'not loaded', 'Volcano visible:', window.volcano ? window.volcano.visible : 'not loaded');
+    console.log('Look inside Volcano button clicked. isInsideView:', window.isInsideView);
     if (window.volcano && window.terrain) {
-        if (window.volcano.visible) {
-            // Fade out slice and fade in terrain
+        if (window.isInsideView) {
+            // Go outside: fade out slice and fade in terrain
             fadeVolcano(true);
             fadeTerrain(false);
         } else {
-            // Fade in slice and fade out terrain
+            // Go inside: fade in slice and fade out terrain
             fadeVolcano(false);
             fadeTerrain(true);
         }

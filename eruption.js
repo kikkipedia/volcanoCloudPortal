@@ -9,6 +9,7 @@ window.shakeCamera = function() {
             window.terrain.traverse((child) => {
                 if (child.isMesh && child.material) {
                     child.material.map = texture;
+                    child.material.transparent = true;
                     child.material.opacity = 0; // Start with opacity 0 for fade-in
                     child.material.needsUpdate = true;
                 }
@@ -23,6 +24,7 @@ window.shakeCamera = function() {
         window.terrainFresnel.traverse((child) => {
             if (child.isMesh && child.userData.fresnelOutline) {
                 fresnelMaterials.push(child.material);
+                child.material.depthWrite = false;
             }
         });
     }
@@ -139,11 +141,7 @@ function type1_eruption() {
     console.log('Type 1 Eruption: High temperature, low gas, shallow depth');
     const btn = document.getElementById('trigger-eruption-btn');
     if (btn) btn.textContent = 'Trigger Eruption Type 1';
-    // Unload the slice 3D model
-    if (window.volcano) {
-        window.scene.remove(window.volcano);
-        window.volcano = null;
-    }
+    // Volcano remains visible at all times
     // Reset other eruption flags
     window.isType2Eruption = false;
     window.isType3Eruption = false;
@@ -169,11 +167,7 @@ function type2_eruption() {
     console.log('Type 2 Eruption: Medium to high temperature, high gas, high depth');
     const btn = document.getElementById('trigger-eruption-btn');
     if (btn) btn.textContent = 'Trigger Eruption Type 2';
-    // Unload the slice 3D model
-    if (window.volcano) {
-        window.scene.remove(window.volcano);
-        window.volcano = null;
-    }
+    // Volcano remains visible at all times
     // Reset other eruption flags
     window.isType1Eruption = false;
     window.isType3Eruption = false;
@@ -199,11 +193,7 @@ function type3_eruption() {
     console.log('Type 3 Eruption: Medium temperature, high gas density, low-medium depth');
     const btn = document.getElementById('trigger-eruption-btn');
     if (btn) btn.textContent = 'Trigger Eruption Type 3';
-    // Unload the slice 3D model
-    if (window.volcano) {
-        window.scene.remove(window.volcano);
-        window.volcano = null;
-    }
+    // Volcano remains visible at all times
     // Reset other eruption flags
     window.isType1Eruption = false;
     window.isType2Eruption = false;
@@ -286,6 +276,13 @@ function resetToBeforeEruption() {
     if (mildSfx) mildSfx.pause();
     if (strongSfx) strongSfx.pause();
 
+    // Switch back to default music if it was playing before eruption
+    const backgroundMusic = document.getElementById('background-music');
+    if (strongSfx) strongSfx.pause();
+    if (backgroundMusic && backgroundMusic.paused) {
+        backgroundMusic.play();
+    }
+
     // Reset smoke particles
     if (window.smokeParticles) {
         window.smokeParticles.forEach(particle => {
@@ -329,6 +326,7 @@ function resetToBeforeEruption() {
             window.terrainFresnel.traverse((child) => {
                 if (child.isMesh && child.userData.fresnelOutline) {
                     child.material.uniforms.fresnelColor.value.setHex(0x00ffff);
+                    child.material.depthWrite = true;
                 }
             });
         }
@@ -386,6 +384,14 @@ function resetToBeforeEruption() {
 function determineEruptionType() {
     console.log('determineEruptionType called');
     const type = getEruptionType();
+
+    // Switch to strong eruption sfx if music is playing
+    const backgroundMusic = document.getElementById('background-music');
+    const strongSfx = document.getElementById('strong_eruption_sfx');
+    if (backgroundMusic && !backgroundMusic.paused) {
+        backgroundMusic.pause();
+        if (strongSfx) strongSfx.play();
+    }
 
     if (type === 'Type 1') {
         type1_eruption();

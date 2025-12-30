@@ -297,7 +297,7 @@ loader.load('mayon_slice_FULL3.glb', function (gltf) {
 
 
     window.scene.add(window.volcano);
-    window.volcano.visible = false; // Default to invisible
+    window.volcano.visible = true; // Always visible
     console.log(window.volcano);
 }, undefined, function (error) {
     console.error('An error happened loading volcano:', error);

@@ -1,13 +1,32 @@
+function updateCameraControlsLimits() {
+    if (window.controls) {
+        if (window.volcano && window.volcano.visible) {
+            // Viewing slice: lock vertical rotation (no x-axis rotation), allow full horizontal (y-axis), disable pan
+            const currentPolar = window.controls.getPolarAngle();
+            window.controls.minPolarAngle = currentPolar;
+            window.controls.maxPolarAngle = currentPolar;
+            window.controls.minAzimuthAngle = -Infinity;
+            window.controls.maxAzimuthAngle = Infinity;
+            window.controls.enablePan = false;
+        } else {
+            // Viewing full model: lock vertical rotation (no x-axis rotation), allow full horizontal (y-axis), enable pan
+            const currentPolar = window.controls.getPolarAngle();
+            window.controls.minPolarAngle = currentPolar;
+            window.controls.maxPolarAngle = currentPolar;
+            window.controls.minAzimuthAngle = -Infinity;
+            window.controls.maxAzimuthAngle = Infinity;
+            window.controls.enablePan = true;
+        }
+    }
+}
+
 function toggleCameraControls() {
     if (window.controls) {
         window.controls.enabled = !window.controls.enabled;
         const button = document.getElementById('toggle-camera-btn');
         if (window.controls.enabled) {
-            // Enable limited movement: -30 to 30 degrees horizontal, no vertical, limited zoom to y=9 to 18
-            window.controls.minAzimuthAngle = -Math.PI / 6; // -30 degrees
-            window.controls.maxAzimuthAngle = Math.PI / 6;  // 30 degrees
-            window.controls.minPolarAngle = window.initialPolarAngle; // No vertical movement
-            window.controls.maxPolarAngle = window.initialPolarAngle;
+            // Enable limited movement: view-specific horizontal and vertical, limited zoom to y=9 to 18
+            updateCameraControlsLimits(); // Apply view-specific limits
             const cosTheta = Math.cos(window.initialPolarAngle);
             window.controls.minDistance = 9 / cosTheta; // Zoom in until y=9
             window.controls.maxDistance = 18 / cosTheta; // Zoom out until y=18
