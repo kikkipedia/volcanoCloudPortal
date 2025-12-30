@@ -9,31 +9,32 @@ redCube.position.set(-4, -3, 5);
 
 window.scene.add(redCube);
 
-// Fade animation function
-function fadeTerrain(out) {
-    console.log('fadeTerrain called with out:', out, 'isFading:', window.isFading);
-    if (!window.terrain || window.isFading) return;
+// Fade animation function for volcano slice
+function fadeVolcano(out) {
+    console.log('fadeVolcano called with out:', out, 'isFading:', window.isFading);
+    if (!window.volcano || window.isFading) return;
 
     window.isFading = true;
     console.log('isFading set to true');
 
+    // Temporarily disable controls to allow camera animation
+    const controlsWereEnabled = window.controls.enabled;
+    window.controls.enabled = false;
+
     const startPosition = window.camera.position.clone();
-    const endPosition = out ? new THREE.Vector3(9, -24, 61) : new THREE.Vector3(15, 14, 25);
-    
-    // Ensure terrain is visible and set initial opacity for fade-in
+    const endPosition = out ? new THREE.Vector3(9, -24, 61) : new THREE.Vector3(15, 5, 25); // Lower position for better view of slice
+
+    // Ensure volcano is visible and set initial opacity for fade-in
     if (!out) {
-        console.log('Fading in: adding terrain back to scene if needed.');
-        window.terrain.traverse(child => {
+        console.log('Fading in: setting volcano visible.');
+        window.volcano.visible = true;
+        window.volcano.traverse(child => {
             if(child.isMesh) {
                 // Ensure material is transparent to allow fading
                 child.material.transparent = true;
                 child.material.opacity = 0;
             }
         });
-        if (!window.scene.children.includes(window.terrain)) {
-            window.scene.add(window.terrain);
-        }
-        window.terrain.visible = true;
     }
 
     const duration = 1500; // 1.5 seconds for the animation
@@ -47,16 +48,16 @@ function fadeTerrain(out) {
         const linearProgress = Math.min(elapsedTime / duration, 1);
         // Apply ease-in-out function for smoother animation
         const easedProgress = 0.5 * (1 - Math.cos(linearProgress * Math.PI));
-        
+
         console.log('Animation step - progress:', easedProgress);
 
         // Interpolate camera position and update its view
         window.camera.position.lerpVectors(startPosition, endPosition, easedProgress);
         if(window.volcano) window.camera.lookAt(window.volcano.position);
 
-        // Interpolate terrain opacity
+        // Interpolate volcano opacity
         const opacity = out ? 1 - easedProgress : easedProgress;
-        window.terrain.traverse((child) => {
+        window.volcano.traverse((child) => {
             if (child.isMesh && child.material) {
                 child.material.opacity = opacity;
             }
@@ -68,10 +69,109 @@ function fadeTerrain(out) {
             // Animation complete
             console.log('Animation complete.');
             window.isFading = false;
+            // Restore controls to previous state
+            window.controls.enabled = controlsWereEnabled;
+            // Set controls target to volcano for consistent look
+            window.controls.target.copy(window.volcano.position);
             if (out) {
-                console.log('Fading out: setting terrain invisible and removing from scene.');
+                console.log('Fading out: setting volcano invisible.');
+                window.volcano.visible = false;
+            }
+        }
+    }
+
+    console.log('Starting animation frame request.');
+    requestAnimationFrame(animationStep);
+}
+
+// Fade animation function
+function fadeTerrain(out) {
+    console.log('fadeTerrain called with out:', out, 'isFading:', window.isFading);
+    if (!window.terrain || window.isFading) return;
+
+    window.isFading = true;
+    console.log('isFading set to true');
+
+    const startPosition = window.camera.position.clone();
+    const endPosition = out ? new THREE.Vector3(9, -24, 61) : new THREE.Vector3(15, 14, 25);
+
+    // Ensure terrain and Fresnel clone are visible and set initial opacity/intensity for fade-in
+    if (!out) {
+        console.log('Fading in: adding terrain and Fresnel clone back to scene if needed.');
+        window.terrain.traverse(child => {
+            if(child.isMesh) {
+                // Ensure material is transparent to allow fading
+                child.material.transparent = true;
+                child.material.opacity = 0;
+            }
+        });
+        if (window.terrainFresnel) {
+            window.terrainFresnel.traverse(child => {
+                if (child.isMesh && child.material && child.material.uniforms) {
+                    child.material.uniforms.fresnelIntensity.value = 0;
+                }
+            });
+        }
+        if (!window.scene.children.includes(window.terrain)) {
+            window.scene.add(window.terrain);
+        }
+        if (window.terrainFresnel && !window.scene.children.includes(window.terrainFresnel)) {
+            window.scene.add(window.terrainFresnel);
+        }
+        window.terrain.visible = true;
+        if (window.terrainFresnel) {
+            window.terrainFresnel.visible = true;
+        }
+    }
+
+    const duration = 1500; // 1.5 seconds for the animation
+    let startTime = null;
+
+    function animationStep(timestamp) {
+        if (startTime === null) {
+            startTime = timestamp;
+        }
+        const elapsedTime = timestamp - startTime;
+        const linearProgress = Math.min(elapsedTime / duration, 1);
+        // Apply ease-in-out function for smoother animation
+        const easedProgress = 0.5 * (1 - Math.cos(linearProgress * Math.PI));
+
+        console.log('Animation step - progress:', easedProgress);
+
+        // Interpolate camera position and update its view
+        window.camera.position.lerpVectors(startPosition, endPosition, easedProgress);
+        if(window.volcano) window.camera.lookAt(window.volcano.position);
+
+        // Interpolate terrain opacity and Fresnel intensity
+        const opacity = out ? 1 - easedProgress : easedProgress;
+        const fresnelIntensity = out ? 0.75 * (1 - easedProgress) : 0.75 * easedProgress;
+        window.terrain.traverse((child) => {
+            if (child.isMesh && child.material) {
+                child.material.opacity = opacity;
+            }
+        });
+        if (window.terrainFresnel) {
+            window.terrainFresnel.traverse((child) => {
+                if (child.isMesh && child.material && child.material.uniforms) {
+                    child.material.uniforms.fresnelIntensity.value = fresnelIntensity;
+                }
+            });
+        }
+
+        if (linearProgress < 1) {
+            requestAnimationFrame(animationStep);
+        } else {
+            // Animation complete
+            console.log('Animation complete.');
+            window.isFading = false;
+            if (out) {
+                console.log('Fading out: setting terrain and Fresnel clone invisible and removing from scene.');
                 window.terrain.visible = false;
                 window.scene.remove(window.terrain);
+                if (window.terrainFresnel) {
+                    window.terrainFresnel.visible = false;
+                    window.scene.remove(window.terrainFresnel);
+                }
             }
         }
     }

@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     const enterButton = document.getElementById('enter-button');
     const backgroundMusic = document.getElementById('background-music');
+    const refreshBtn = document.getElementById('refresh-btn');
+    const toggleCameraBtn = document.getElementById('toggle-camera-btn');
 
     backgroundMusic.pause();
 
@@ -10,6 +12,14 @@ document.addEventListener('DOMContentLoaded', () => {
             toggleAudio();
         }
     }, { once: true });
+
+    refreshBtn.addEventListener('click', () => {
+        location.reload();
+    });
+
+    toggleCameraBtn.addEventListener('click', () => {
+        toggleCameraControls();
+    });
 });
 
 
@@ -121,10 +131,15 @@ function createFresnelMaterial(fresnelColor = new THREE.Color(0x00ffff), fresnel
 }
 
 // Add controls
-const controls = new THREE.OrbitControls(window.camera, renderer.domElement);
+window.controls = new THREE.OrbitControls(window.camera, renderer.domElement);
+window.controls.enabled = false; // Default to off
 window.camera.position.set(15, 14, 25);
 window.camera.lookAt(0, 0, 0);
-controls.update();
+window.controls.update();
+
+// Store initial angles for limited movement
+window.initialPolarAngle = window.controls.getPolarAngle();
+window.initialAzimuthAngle = window.controls.getAzimuthalAngle();
 
 
 // Add enhanced lighting for better global illumination
@@ -281,6 +296,7 @@ loader.load('mayon_slice_FULL3.glb', function (gltf) {
 
 
     window.scene.add(window.volcano);
+    window.volcano.visible = false; // Default to invisible
     console.log(window.volcano);
 }, undefined, function (error) {
     console.error('An error happened loading volcano:', error);
@@ -299,8 +315,10 @@ function animate() {
     // Update smoke
     updateSmoke();
     updateAsh();
-    // Update controls
-    controls.update();
+    // Update controls only if not fading
+    if (!window.isFading) {
+        window.controls.update();
+    }
 
     // Render the scene
     renderer.render(window.scene, window.camera);

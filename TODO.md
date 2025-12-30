@@ -1,4 +1,3 @@
-- [x] Update createFresnelMaterial function in main.js to set transparent: true and depthWrite: false
-- [x] Modify the fragment shader in createFresnelMaterial to calculate cameraDistance = length(cameraPosition) and set alpha = clamp(cameraDistance / 50.0, 0.1, 1.0), then use vec4(finalColor, alpha) for gl_FragColor
-- [x] Ensure fresnel material is only applied to the full model (terrain), not the volcano slice
-- [x] Test the changes to verify transparency increases as camera gets closer to the model
+- [x] Set window.volcano.visible = false in main.js after adding to scene
+- [x] Add fadeVolcano function in poi.js
+- [x] Update toggle button event listener in poi.js to use fadeVolcano for window.volcano
