@@ -1,5 +1,5 @@
 let prevNumActiveParticles = 0;
-const smokeParticles = [];
+window.smokeParticles = [];
 const loadedTextures = [];
 const smokeGeometry = new THREE.PlaneGeometry(10, 10);
 

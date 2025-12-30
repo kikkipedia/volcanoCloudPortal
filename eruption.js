@@ -1,4 +1,5 @@
 // Function to shake the camera with looping, varying speed and intensity, and uneven intervals
+window.shakeAnimationId = null;
 window.shakeCamera = function() {
     // Override texture of mayon_FULL3.glb with volcano_erupted_tex.png
     const textureLoader = new THREE.TextureLoader();
@@ -18,16 +19,9 @@ window.shakeCamera = function() {
     // Collect fresnel materials for color interpolation
     let fresnelMaterials = [];
     const originalFresnelColor = new THREE.Color(0x00ffff); // Original cyan color
-    if (window.terrain) {
-        window.terrain.traverse((child) => {
-            if (child.userData.fresnelOutline && child.material.uniforms && child.material.uniforms.fresnelColor) {
-                fresnelMaterials.push(child.material);
-            }
-        });
-    }
-    if (window.volcano) {
-        window.volcano.traverse((child) => {
-            if (child.userData.fresnelOutline && child.material.uniforms && child.material.uniforms.fresnelColor) {
+    if (window.terrainFresnel) {
+        window.terrainFresnel.traverse((child) => {
+            if (child.isMesh && child.userData.fresnelOutline) {
                 fresnelMaterials.push(child.material);
             }
         });
@@ -116,7 +110,7 @@ window.shakeCamera = function() {
                     );
                 }
 
-                requestAnimationFrame(animateShake);
+                window.shakeAnimationId = requestAnimationFrame(animateShake);
             } else {
                 // End of shake
                 isShaking = false;
@@ -129,11 +123,11 @@ window.shakeCamera = function() {
                 }
                 // Set next shake time with random delay (3-10 seconds)
                 nextShakeTime = currentTime + Math.random() * 7000 + 3000;
-                requestAnimationFrame(animateShake);
+                window.shakeAnimationId = requestAnimationFrame(animateShake);
             }
         } else {
             // Not shaking, continue looping
-            requestAnimationFrame(animateShake);
+            window.shakeAnimationId = requestAnimationFrame(animateShake);
         }
     }
 
@@ -273,9 +267,43 @@ window.updateTriggerButtonText = function() {
     }
 };
 
+// Function to stop the camera shake animation
+window.stopShake = function() {
+    if (window.shakeAnimationId) {
+        cancelAnimationFrame(window.shakeAnimationId);
+        window.shakeAnimationId = null;
+    }
+};
+
 // Function to reset the scene to before eruption
 function resetToBeforeEruption() {
+    window.stopShake();
     console.log('Resetting to before eruption');
+
+    // Stop sounds
+    const mildSfx = document.getElementById('mild_eruption_sfx');
+    const strongSfx = document.getElementById('strong_eruption_sfx');
+    if (mildSfx) mildSfx.pause();
+    if (strongSfx) strongSfx.pause();
+
+    // Reset smoke particles
+    if (window.smokeParticles) {
+        window.smokeParticles.forEach(particle => {
+            particle.visible = false;
+        });
+    }
+
+    // Reset ash particles
+    if (window.ashParticles) {
+        window.ashParticles.forEach(particle => {
+            particle.userData.isActive = false;
+            particle.visible = false;
+            if (particle.material) {
+                particle.material.visible = false;
+            }
+        });
+    }
+    
     // Reset eruption flags
     window.isType1Eruption = false;
     window.isType2Eruption = false;
@@ -290,24 +318,20 @@ function resetToBeforeEruption() {
     window.camera.position.set(15, 14, 25);
     window.camera.lookAt(0, 0, 0);
     // Reset terrain texture and opacity
-    if (window.terrain) {
-        const textureLoader = new THREE.TextureLoader();
-        textureLoader.load('mayon_FULL3.glb', (texture) => {
-            texture.encoding = THREE.sRGBEncoding;
-            window.terrain.traverse((child) => {
-                if (child.isMesh && child.material) {
-                    child.material.map = texture;
-                    child.material.opacity = 1.0;
-                    child.material.needsUpdate = true;
-                }
-            });
-        });
-        // Reset Fresnel colors
+    if (window.terrain && window.originalTerrainMaterial) {
         window.terrain.traverse((child) => {
-            if (child.userData.fresnelOutline && child.material.uniforms && child.material.uniforms.fresnelColor) {
-                child.material.uniforms.fresnelColor.value.setHex(0x00ffff);
+            if (child.isMesh) {
+                child.material = window.originalTerrainMaterial.clone();
             }
         });
+        // Reset Fresnel colors
+        if (window.terrainFresnel) {
+            window.terrainFresnel.traverse((child) => {
+                if (child.isMesh && child.userData.fresnelOutline) {
+                    child.material.uniforms.fresnelColor.value.setHex(0x00ffff);
+                }
+            });
+        }
     }
     // Reload volcano slice model if it was removed
     if (!window.volcano) {
@@ -400,6 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.eruptionTriggered = false;
             } else {
                 determineEruptionType();
+                window.eruptionTriggered = true;
             }
         });
     }

@@ -205,6 +205,7 @@ const loader = new THREE.GLTFLoader();
 
 // Variables for fade animation
 window.terrain = null;
+window.originalTerrainMaterial = null;
 window.isFading = false;
 window.volcano = null;
 
@@ -214,6 +215,13 @@ loader.load('mayon_FULL3.glb', ({ scene: terrainModel }) => {
     terrainModel.position.set(0, 0.15, 0); // Separated position to avoid overlap
     terrainModel.scale.set(0.25, 0.25, 0.25);
     terrainModel.rotation.set(0, -135, 0);
+
+    // Store the original material for resetting
+    terrainModel.traverse((child) => {
+        if (child.isMesh && !window.originalTerrainMaterial) {
+            window.originalTerrainMaterial = child.material.clone();
+        }
+    });
 
     // Clone the terrain model for Fresnel effect
     const terrainFresnel = terrainModel.clone();

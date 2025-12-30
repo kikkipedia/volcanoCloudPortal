@@ -1,4 +1,4 @@
-const ashParticles = [];
+window.ashParticles = [];
 const loadedAshTextures = [];
 const ashGeometry = new THREE.PlaneGeometry(10, 10);
 
