@@ -221,7 +221,8 @@ const loader = new THREE.GLTFLoader();
 // Variables for fade animation
 window.terrain = null;
 window.originalTerrainMaterial = null;
-window.isFading = false;
+window.isFadingTerrain = false;
+window.isFadingVolcano = false;
 window.volcano = null;
 
 
@@ -316,7 +317,7 @@ function animate() {
     updateSmoke();
     updateAsh();
     // Update controls only if not fading
-    if (!window.isFading) {
+    if (!window.isFadingTerrain && !window.isFadingVolcano) {
         window.controls.update();
     }
 

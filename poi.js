@@ -11,10 +11,10 @@ window.scene.add(redCube);
 
 // Fade animation function for volcano slice
 function fadeVolcano(out) {
-    console.log('fadeVolcano called with out:', out, 'isFading:', window.isFading);
-    if (!window.volcano || window.isFading) return;
+    console.log('fadeVolcano called with out:', out, 'isFadingVolcano:', window.isFadingVolcano);
+    if (!window.volcano || window.isFadingVolcano) return;
 
-    window.isFading = true;
+    window.isFadingVolcano = true;
     console.log('isFading set to true');
 
     // Temporarily disable controls to allow camera animation
@@ -22,7 +22,7 @@ function fadeVolcano(out) {
     window.controls.enabled = false;
 
     const startPosition = window.camera.position.clone();
-    const endPosition = out ? new THREE.Vector3(9, -24, 61) : new THREE.Vector3(15, 5, 25); // Lower position for better view of slice
+    const endPosition = out ? new THREE.Vector3(15, 14, 25) : new THREE.Vector3(3.63, 17.96, 37.23); // Initial position for fade out, inside for fade in
 
     // Ensure volcano is visible and set initial opacity for fade-in
     if (!out) {
@@ -68,7 +68,7 @@ function fadeVolcano(out) {
         } else {
             // Animation complete
             console.log('Animation complete.');
-            window.isFading = false;
+            window.isFadingVolcano = false;
             // Restore controls to previous state
             window.controls.enabled = controlsWereEnabled;
             // Set controls target to volcano for consistent look
@@ -86,14 +86,14 @@ function fadeVolcano(out) {
 
 // Fade animation function
 function fadeTerrain(out) {
-    console.log('fadeTerrain called with out:', out, 'isFading:', window.isFading);
-    if (!window.terrain || window.isFading) return;
+    console.log('fadeTerrain called with out:', out, 'isFadingTerrain:', window.isFadingTerrain);
+    if (!window.terrain || window.isFadingTerrain) return;
 
-    window.isFading = true;
+    window.isFadingTerrain = true;
     console.log('isFading set to true');
 
     const startPosition = window.camera.position.clone();
-    const endPosition = out ? new THREE.Vector3(9, -24, 61) : new THREE.Vector3(15, 14, 25);
+    const endPosition = out ? new THREE.Vector3(15, 5, 25) : new THREE.Vector3(15, 14, 25); // Inside position for fade out, initial for fade in
 
     // Ensure terrain and Fresnel clone are visible and set initial opacity/intensity for fade-in
     if (!out) {
@@ -138,10 +138,6 @@ function fadeTerrain(out) {
 
         console.log('Animation step - progress:', easedProgress);
 
-        // Interpolate camera position and update its view
-        window.camera.position.lerpVectors(startPosition, endPosition, easedProgress);
-        if(window.volcano) window.camera.lookAt(window.volcano.position);
-
         // Interpolate terrain opacity and Fresnel intensity
         const opacity = out ? 1 - easedProgress : easedProgress;
         const fresnelIntensity = out ? 0.75 * (1 - easedProgress) : 0.75 * easedProgress;
@@ -163,7 +159,7 @@ function fadeTerrain(out) {
         } else {
             // Animation complete
             console.log('Animation complete.');
-            window.isFading = false;
+            window.isFadingTerrain = false;
             if (out) {
                 console.log('Fading out: setting terrain and Fresnel clone invisible and removing from scene.');
                 window.terrain.visible = false;
@@ -229,8 +225,16 @@ function toggleAudio() {
 
 window.addEventListener('click', onMouseClick);
 document.getElementById('toggle-visibility-btn').addEventListener('click', () => {
-    console.log('Toggle terrain button clicked. Terrain visible:', window.terrain ? window.terrain.visible : 'not loaded');
-    if (window.terrain) {
-        fadeTerrain(window.terrain.visible);
+    console.log('Look inside Volcano button clicked. Terrain visible:', window.terrain ? window.terrain.visible : 'not loaded', 'Volcano visible:', window.volcano ? window.volcano.visible : 'not loaded');
+    if (window.volcano && window.terrain) {
+        if (window.volcano.visible) {
+            // Fade out slice and fade in terrain
+            fadeVolcano(true);
+            fadeTerrain(false);
+        } else {
+            // Fade in slice and fade out terrain
+            fadeVolcano(false);
+            fadeTerrain(true);
+        }
     }
 });
