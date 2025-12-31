@@ -1,8 +1,13 @@
-# Remove functionalities that turn the slice 3D model invisible
+# TODO: Implement Camera Reset on Inside Volcano Button Toggle
 
-## Tasks
-- [x] Change default visibility in main.js from false to true
-- [x] Remove visibility setting to false in fadeVolcano function in poi.js
-- [x] Remove volcano removal in type1_eruption function in eruption.js
-- [x] Remove volcano removal in type2_eruption function in eruption.js
-- [x] Remove volcano removal in type3_eruption function in eruption.js
+## Completed Steps
+- [x] Add `window.isAnimatingCamera` flag to track camera animation state
+- [x] Create `animateCameraToDefault()` function to animate camera to default position (15, 14, 25) with lookAt (0, 0, 0)
+- [x] Update animation loop in main.js to prevent controls update during camera animation
+- [x] Modify button click handler in poi.js to call `animateCameraToDefault()` when going outside (isInsideView true)
+
+## Followup Steps
+- [ ] Test the button toggle to ensure camera resets to default when going outside
+- [ ] Verify no conflicts with existing animations (fadeTerrain, fadeVolcano)
+- [ ] Check that controls are properly restored after animation
+- [ ] Ensure isInsideView state is correctly updated

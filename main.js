@@ -316,8 +316,8 @@ function animate() {
     // Update smoke
     updateSmoke();
     updateAsh();
-    // Update controls only if not fading
-    if (!window.isFadingTerrain && !window.isFadingVolcano) {
+    // Update controls only if not fading or animating camera
+    if (!window.isFadingTerrain && !window.isFadingVolcano && !window.isAnimatingCamera) {
         window.controls.update();
     }
 

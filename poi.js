@@ -1,4 +1,5 @@
 window.isInsideView = false;
+window.isAnimatingCamera = false;
 
 const redCubeGeometry = new THREE.BoxGeometry(1, 1, 1);
 const redCubeMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
@@ -24,7 +25,7 @@ function fadeVolcano(out) {
     window.controls.enabled = false;
 
     const startPosition = window.camera.position.clone();
-    const endPosition = out ? new THREE.Vector3(15, 14, 25) : new THREE.Vector3(4, 2, 41); // Initial position for fade out, inside for fade in
+    const endPosition = out ? new THREE.Vector3(15, 14.15, 25) : new THREE.Vector3(4, 2, 41); // Initial position for fade out, inside for fade in
 
     // Ensure volcano is visible and set initial opacity for fade-in
     if (!out) {
@@ -190,6 +191,72 @@ function fadeTerrain(out) {
     requestAnimationFrame(animationStep);
 }
 
+// Animate camera to default position
+function animateCameraToDefault() {
+    console.log('animateCameraToDefault called. isAnimatingCamera:', window.isAnimatingCamera);
+    if (window.isAnimatingCamera) return;
+
+    window.isAnimatingCamera = true;
+    console.log('isAnimatingCamera set to true');
+
+    // Temporarily disable controls to allow camera animation
+    const controlsWereEnabled = window.controls.enabled;
+    window.controls.enabled = false;
+
+    const startPosition = window.camera.position.clone();
+    const endPosition = new THREE.Vector3(15, 14, 25);
+
+    const duration = 1500; // 1.5 seconds for the animation
+    let startTime = null;
+
+    function animationStep(timestamp) {
+        if (startTime === null) {
+            startTime = timestamp;
+        }
+        const elapsedTime = timestamp - startTime;
+        const linearProgress = Math.min(elapsedTime / duration, 1);
+        // Apply ease-in-out function for smoother animation
+        const easedProgress = 0.5 * (1 - Math.cos(linearProgress * Math.PI));
+
+        console.log('Camera animation step - progress:', easedProgress);
+
+        // Interpolate camera position
+        window.camera.position.lerpVectors(startPosition, endPosition, easedProgress);
+        window.camera.lookAt(0, 0, 0);
+
+        if (linearProgress < 1) {
+            requestAnimationFrame(animationStep);
+        } else {
+            // Animation complete
+            console.log('Camera animation complete.');
+            window.isAnimatingCamera = false;
+            // Set controls target to default
+            window.controls.target.set(0, 0, 0);
+            window.camera.position.set(15, 14, 25);
+            window.camera.lookAt(0, 0, 0);
+            // Temporarily set full range to allow setting position
+            window.controls.minAzimuthAngle = -Infinity;
+            window.controls.maxAzimuthAngle = Infinity;
+            window.controls.minPolarAngle = 0;
+            window.controls.maxPolarAngle = Math.PI;
+            // Sync controls internal state with new camera position
+            window.controls.update();
+            // Ensure position is maintained after controls update
+            window.camera.position.set(15, 14, 25);
+            window.camera.lookAt(0, 0, 0);
+            // Update camera controls limits
+            updateCameraControlsLimits();
+            // Restore controls to previous state
+            window.controls.enabled = controlsWereEnabled;
+            // Update inside view state
+            window.isInsideView = false;
+        }
+    }
+
+    console.log('Starting camera animation frame request.');
+    requestAnimationFrame(animationStep);
+}
+
 
 // Raycaster for click detection
 const raycaster = new THREE.Raycaster();
@@ -242,9 +309,9 @@ document.getElementById('toggle-visibility-btn').addEventListener('click', () =>
     console.log('Look inside Volcano button clicked. isInsideView:', window.isInsideView);
     if (window.volcano && window.terrain) {
         if (window.isInsideView) {
-            // Go outside: fade out slice and fade in terrain
-            fadeVolcano(true);
+            // Go outside: fade in terrain and animate camera to default
             fadeTerrain(false);
+            animateCameraToDefault();
         } else {
             // Go inside: fade in slice and fade out terrain
             fadeVolcano(false);
