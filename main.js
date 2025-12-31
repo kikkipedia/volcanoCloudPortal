@@ -40,10 +40,10 @@ function toggleAudio() {
 
     if (backgroundMusic.paused) {
         backgroundMusic.play();
-        if(enterButton) enterButton.textContent = 'Audio Off';
+        if(enterButton) enterButton.textContent = 'Stop Audio';
     } else {
         backgroundMusic.pause();
-        if(enterButton) enterButton.textContent = 'Audio On';
+        if(enterButton) enterButton.textContent = 'Play Audio';
     }
 }
 

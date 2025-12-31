@@ -300,7 +300,7 @@ function resetToBeforeEruption() {
             }
         });
     }
-    
+
     // Reset eruption flags
     window.isType1Eruption = false;
     window.isType2Eruption = false;
@@ -319,18 +319,37 @@ function resetToBeforeEruption() {
         window.terrain.traverse((child) => {
             if (child.isMesh) {
                 child.material = window.originalTerrainMaterial.clone();
+                child.material.transparent = false;
+                child.material.opacity = 1.0;
             }
         });
+        // Ensure terrain is added back to scene and visible
+        if (!window.scene.children.includes(window.terrain)) {
+            window.scene.add(window.terrain);
+        }
+        window.terrain.visible = true;
         // Reset Fresnel colors
         if (window.terrainFresnel) {
             window.terrainFresnel.traverse((child) => {
                 if (child.isMesh && child.userData.fresnelOutline) {
                     child.material.uniforms.fresnelColor.value.setHex(0x00ffff);
+                    child.material.uniforms.fresnelIntensity.value = 0.75;
                     child.material.depthWrite = true;
                 }
             });
+            // Ensure terrainFresnel is added back to scene and visible
+            if (!window.scene.children.includes(window.terrainFresnel)) {
+                window.scene.add(window.terrainFresnel);
+            }
+            window.terrainFresnel.visible = true;
         }
     }
+    // Reset fade flags to allow future animations
+    window.isFadingTerrain = false;
+    window.isFadingVolcano = false;
+    window.isAnimatingCamera = false;
+    // Reset view state
+    window.isInsideView = false;
     // Reload volcano slice model if it was removed
     if (!window.volcano) {
         const loader = new THREE.GLTFLoader();
