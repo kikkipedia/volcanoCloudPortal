@@ -76,6 +76,8 @@ function fadeVolcano(out) {
             // Animation complete
             console.log('Animation complete.');
             window.isFadingVolcano = false;
+            // Ensure camera is precisely at endPosition
+            window.camera.position.copy(endPosition);
             // Set controls target to appropriate position
             if (out) {
                 window.controls.target.set(0, 0, 0);
@@ -85,8 +87,6 @@ function fadeVolcano(out) {
             }
             // Sync controls internal state with new camera position
             window.controls.update();
-            // Update camera controls limits based on new visible model
-            updateCameraControlsLimits();
             // Restore controls to previous state
             window.controls.enabled = controlsWereEnabled;
             // Update inside view state
@@ -244,8 +244,6 @@ function animateCameraToDefault() {
             // Ensure position is maintained after controls update
             window.camera.position.set(15, 14, 25);
             window.camera.lookAt(0, 0, 0);
-            // Update camera controls limits
-            updateCameraControlsLimits();
             // Restore controls to previous state
             window.controls.enabled = controlsWereEnabled;
             // Update inside view state

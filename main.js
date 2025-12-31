@@ -2,24 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const enterButton = document.getElementById('enter-button');
     const backgroundMusic = document.getElementById('background-music');
     const refreshBtn = document.getElementById('refresh-btn');
-    const toggleCameraBtn = document.getElementById('toggle-camera-btn');
 
     backgroundMusic.pause();
-
-    enterButton.addEventListener('click', () => {
-        enterButton.style.display = 'none';
-        if (backgroundMusic.paused) {
-            toggleAudio();
-        }
-    }, { once: true });
-
-    refreshBtn.addEventListener('click', () => {
-        location.reload();
-    });
-
-    toggleCameraBtn.addEventListener('click', () => {
-        toggleCameraControls();
-    });
 });
 
 
