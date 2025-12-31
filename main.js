@@ -1,10 +1,77 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const enterButton = document.getElementById('enter-button');
     const backgroundMusic = document.getElementById('background-music');
+    const enterButton = document.getElementById('enter-button');
     const refreshBtn = document.getElementById('refresh-btn');
+    const toggleCameraBtn = document.getElementById('toggle-camera-btn');
 
-    backgroundMusic.pause();
+    if (backgroundMusic) {
+        backgroundMusic.pause();
+    }
+
+    if (enterButton) {
+        enterButton.addEventListener('click', () => {
+            toggleAudio();
+        });
+    }
+
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            location.reload();
+        });
+    }
+
+    if (toggleCameraBtn) {
+        toggleCameraBtn.addEventListener('click', () => {
+            toggleCameraControls();
+        });
+    }
 });
+
+function toggleAudio() {
+    const backgroundMusic = document.getElementById('background-music');
+    const enterButton = document.getElementById('enter-button');
+    if (!backgroundMusic) {
+        console.error("Audio element with id 'background-music' not found.");
+        return;
+    }
+    // Set properties each time to ensure they are applied
+    backgroundMusic.volume = 0.05;
+    backgroundMusic.playbackRate = 0.75;
+
+    if (backgroundMusic.paused) {
+        backgroundMusic.play();
+        if(enterButton) enterButton.textContent = 'Audio Off';
+    } else {
+        backgroundMusic.pause();
+        if(enterButton) enterButton.textContent = 'Audio On';
+    }
+}
+
+// Function to toggle camera controls (re-introduced)
+function toggleCameraControls() {
+    if (window.controls) {
+        window.controls.enabled = !window.controls.enabled;
+        const button = document.getElementById('toggle-camera-btn');
+        if (window.controls.enabled) {
+            // Apply specified limits when controls are enabled
+            window.controls.minPolarAngle = Math.PI / 3; // 60 degrees (from top)
+            window.controls.maxPolarAngle = 2 * Math.PI / 3; // 120 degrees (from top)
+            window.controls.minAzimuthAngle = -Infinity; // Keep full horizontal rotation
+            window.controls.maxAzimuthAngle = Infinity; // Keep full horizontal rotation
+            window.controls.enablePan = true; // Enable pan when controls are on
+            button.textContent = 'Camera Control On';
+        } else {
+            // Reset limits and disable pan when controls are off
+            window.controls.minPolarAngle = 0; // Full range
+            window.controls.maxPolarAngle = Math.PI; // Full range
+            window.controls.minAzimuthAngle = -Infinity; // Full range
+            window.controls.maxAzimuthAngle = Infinity; // Full range
+            window.controls.enablePan = false; // Disable pan when controls are off
+            button.textContent = 'Camera Control Off';
+        }
+        console.log('Camera controls ' + (window.controls.enabled ? 'enabled' : 'disabled'));
+    }
+}
 
 
 // Initialize Three.js scene
@@ -85,13 +152,13 @@ function createFresnelMaterial(fresnelColor = new THREE.Color(0x00ffff), fresnel
             fresnel = pow(fresnel, fresnelPower);
 
             // Modulate intensity based on camera distance
-            float cameraDistance = length(cameraPosition);
+            float cameraDistance = length(vViewPosition); // Corrected: use vViewPosition for distance from camera
             float distanceFactor = clamp(cameraDistance / 50.0, 0.1, 1.0);
 
             // Use smoothstep for a blurred transition
             float alpha = smoothstep(0.1, 0.7, fresnel) * fresnelIntensity * distanceFactor;
 
-            gl_FragColor = vec4(fresnelColor, alpha);
+            gl_FragColor = vec4(fresnelColor.rgb, alpha); // Corrected: use fresnelColor and alpha
         }
     `;
 
@@ -120,10 +187,6 @@ window.controls.enabled = false; // Default to off
 window.camera.position.set(15, 14, 25);
 window.camera.lookAt(0, 0, 0);
 window.controls.update();
-
-// Store initial angles for limited movement
-window.initialPolarAngle = window.controls.getPolarAngle();
-window.initialAzimuthAngle = window.controls.getAzimuthalAngle();
 
 
 // Add enhanced lighting for better global illumination
