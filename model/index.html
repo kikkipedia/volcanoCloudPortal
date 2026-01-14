@@ -4,11 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Volcano 3D Models</title>
-    <link rel="stylesheet" href="style.css?t=1734336000000">
+    <link rel="stylesheet" href="style.css">
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.182.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.182.0/examples/jsm/"
+            }
+        }
+    </script>
 </head>
 <body>
-    <audio id="background-music" src="music_idle.mp3" volume="0.5" playbackRate="0.5" loop></audio>
-    <audio id="strong_eruption_sfx" src="strong_eruption_sfx.mp3" volume="0.5" loop></audio>
+    <audio id="background-music" src="resources/music_idle.mp3" volume="0.5" playbackRate="0.5" loop></audio>
+    <audio id="strong_eruption_sfx" src="resources/strong_eruption_sfx.mp3" volume="0.5" loop></audio>
     <div id="button-container">
         <button id="enter-button">Play Audio</button>
         <button id="toggle-visibility-btn">Look inside Volcano</button>
@@ -35,16 +43,6 @@
         </div>
     </div>
     <div id="infobox"></div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Sky.js"></script>
-    <script src="smoke.js?t=1734336000000"></script>
-    <script src="ash.js?t=1734336000000"></script>
-    <script src="camera.js?t=1734336000000"></script>
-    <script src="main.js?t=1734336000000"></script>
-    <script src="poi.js?t=1734336000000"></script>
-    <script src="parameters.js?t=1734336000001"></script>
-    <script src="eruption.js?t=1734336000000"></script>
+    <script type="module" src="./src/main.js"></script>
 </body>
 </html>
